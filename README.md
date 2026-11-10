@@ -16,8 +16,10 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `lib/jobs.js` | Sunday digest, day-before reminders, 72-hour gap alerts, reconfirm deadlines, coach nudges |
 | `lib/notify.js` | Email (Gmail) and text (Twilio). Everything is logged on the Messages page |
 | `lib/people.js`, `lib/auth.js` | Email + PIN sign-in, umpire and coach lists |
+| `lib/clock.js` | The one clock. Every "now" in the code comes from here so tests can travel in time |
 | `public/` | The web pages |
-| `test/flow.test.js` | Runs the whole season flow end to end (`npm test`) |
+| `test/unit/`, `test/api/`, `test/integration/` | The test suite (`npm test`); helpers in `test/helpers/` |
+| `scripts/planted-bugs.js` | Breaks each rule in turn and checks a test goes red (`npm run planted-bugs`) |
 | `scripts/demo-seed.js` | Fills a local copy with fake umpires, coaches and games |
 
 All Firestore collections start with `ump_`, so nothing collides with the other QYBSL apps.
@@ -26,10 +28,30 @@ All Firestore collections start with `ump_`, so nothing collides with the other 
 
 ```bash
 npm install
-npm test                                   # should end with "All checks passed"
+npm test                                   # unit + API + integration (local store)
+npm run planted-bugs                       # proves the tests catch a broken rule
 LOCAL_DB_FILE=./data/demo.json node scripts/demo-seed.js
 LOCAL_DB_FILE=./data/demo.json ADMIN_EMAILS=john@demo.test NOTIFY_DRY=1 npm start
 ```
+
+### Tests
+
+The suite runs on Node's built-in test runner and is split by kind so one
+failure never hides the next:
+
+- `test/unit/` — pure rules at every boundary, with `fast-check` property tests
+  (sign-up eligibility, payout periods, time/DST math, schedule parsing).
+- `test/api/` — each feature driven through the HTTP API as the real roles
+  (umpire, coach, admin, signed out), checking what changed in the data and
+  exactly who was messaged.
+- `test/integration/` — `lib/store.js` and the 20-umpires-one-slot race, run on
+  the local store always and against the Firestore emulator when
+  `FIRESTORE_EMULATOR_HOST` is set (`npm run test:integration`).
+
+Time comes from `lib/clock.js`; tests freeze or travel it, never the wall clock.
+`npm run mutate` runs Stryker mutation testing (rules ≥ 85%, the rest ≥ 70%).
+Both the test suite and `npm run planted-bugs` run in Cloud Build before the
+image is built, so a failing test blocks the deploy.
 
 Open http://localhost:3000 and sign in as:
 - `john@demo.test` / `1234` (admin)

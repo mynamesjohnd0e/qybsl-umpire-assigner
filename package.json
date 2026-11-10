@@ -6,7 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node test/flow.test.js && node test/csv.test.js"
+    "test": "node --test test/unit/*.test.js test/api/*.test.js test/integration/*.test.js",
+    "test:integration": "node --test test/integration/*.test.js",
+    "planted-bugs": "node scripts/planted-bugs.js",
+    "verify": "npm test && npm run planted-bugs",
+    "mutate": "stryker run stryker.rules.conf.json && stryker run stryker.rest.conf.json",
+    "mutate:rules": "stryker run stryker.rules.conf.json",
+    "mutate:rest": "stryker run stryker.rest.conf.json"
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.9.0",
@@ -15,5 +21,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^10.1.1",
+    "fast-check": "^4.10.2"
   }
 }

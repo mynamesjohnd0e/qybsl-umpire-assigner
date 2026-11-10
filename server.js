@@ -2,6 +2,7 @@
 const express = require('express');
 const path = require('path');
 const store = require('./lib/store');
+const clock = require('./lib/clock');
 const auth = require('./lib/auth');
 const people = require('./lib/people');
 const G = require('./lib/games');
@@ -86,7 +87,7 @@ app.get('/api/umpire/board', auth.requireUser, h(async req => {
   const [all, swaps, dir] = await Promise.all([store.list('games'), store.list('swaps'), store.list('people')]);
   const games = all;
   const nameOf = new Map(dir.map(p => [p.email, p.name]));
-  const now = new Date();
+  const now = clock.now();
   const upcoming = games.filter(g => g.track === 'student' && G.isLive(g) && new Date(g.start) > now)
     .sort((a, b) => a.start.localeCompare(b.start));
   const weekCounts = {};
@@ -125,7 +126,7 @@ app.get('/api/coach/games', auth.requireCoach, h(async req => {
   const games = await coach.coachGames(req.user);
   const dir = new Map((await store.list('people')).map(p => [p.email, p.name]));
   const ratings = (await store.list('ratings')).filter(r => r.coachId === req.user.email && !r.noShow);
-  const now = new Date();
+  const now = clock.now();
   return {
     pending: !!req.user.coach?.pending, teams: req.user.coach?.teams || [],
     games: games.filter(g => G.isLive(g)).sort((a, b) => b.start.localeCompare(a.start)).map(g => ({
@@ -151,7 +152,7 @@ app.get('/api/admin/overview', A, h(async () => {
   ]);
   const s = await getSettings();
   const dir = new Map(ppl.map(p => [p.email, p.name]));
-  const now = new Date();
+  const now = clock.now();
   const lastRun = runs.sort((a, b) => b.at.localeCompare(a.at))[0] || null;
   const view = games.sort((a, b) => a.start.localeCompare(b.start)).map(g => {
     let coverage;
@@ -193,7 +194,7 @@ app.post('/api/admin/people', A, h(async req => {
   const email = auth.normEmail(b.email);
   if (!auth.validEmail(email)) throw new Error('Enter a valid email.');
   if (await store.get('people', email)) throw new Error('That email is already in the list.');
-  const p = { email, name: String(b.name || '').trim(), mobile: String(b.mobile || '').trim(), registered: false, pinHash: null, createdAt: new Date().toISOString(), umpire: null, coach: null };
+  const p = { email, name: String(b.name || '').trim(), mobile: String(b.mobile || '').trim(), registered: false, pinHash: null, createdAt: clock.now().toISOString(), umpire: null, coach: null };
   if (b.role === 'umpire') p.umpire = { onRoster: true, approved: true, active: true, plateQualified: !!b.plateQualified, parentName: b.parentName || '', parentEmail: auth.normEmail(b.parentEmail), parentMobile: b.parentMobile || '', venmo: b.venmo || '' };
   if (b.role === 'coach') p.coach = { onRoster: true, pending: false, teams: b.team ? [{ team: b.team, division: b.division || '' }] : [] };
   await store.set('people', email, p);
@@ -230,7 +231,7 @@ app.post('/api/admin/people/:email/reset-pin', A, h(async req => {
 app.delete('/api/admin/people/:email', A, h(async req => {
   const email = auth.normEmail(req.params.email);
   const games = await store.list('games');
-  if (games.some(g => G.isLive(g) && new Date(g.start) > new Date() && G.holds(g, email).length)) throw new Error('Take them off their upcoming games first.');
+  if (games.some(g => G.isLive(g) && new Date(g.start) > clock.now() && G.holds(g, email).length)) throw new Error('Take them off their upcoming games first.');
   await store.del('people', email);
 }));
 
@@ -239,7 +240,7 @@ app.post('/api/admin/games', A, h(async req => {
   if (!b.start || !b.division) throw new Error('Date/time and division are required.');
   const track = ['student', 'patched'].includes(b.track) ? b.track : 'student';
   const s = await getSettings();
-  const uid = `manual-${Date.now()}`;
+  const uid = `manual-${clock.now().getTime()}-${Math.random().toString(36).slice(2, 8)}`;
   const start = new Date(b.start).toISOString();
   const end = b.end ? new Date(b.end).toISOString() : new Date(new Date(start).getTime() + s.defaultGameMinutes * 60e3).toISOString();
   const g = G.newGame({ uid, source: 'manual', season: b.season || s.seasonLabel, division: b.division, summary: b.summary || `${b.away || ''} at ${b.home || ''}`.trim(), home: b.home, away: b.away, location: b.field, start, end }, track);
@@ -253,7 +254,7 @@ app.post('/api/admin/games/:id/cancel', A, h(async req => {
   const g = await store.get('games', req.params.id);
   if (!g) throw new Error('Not found.');
   const who = g.slots ? G.SLOTS.map(k => g.slots[k].umpireId).filter(Boolean) : [];
-  g.status = 'cancelled'; g.cancelledAt = new Date().toISOString(); g.cancelReason = 'cancelled by admin';
+  g.status = 'cancelled'; g.cancelledAt = clock.now().toISOString(); g.cancelReason = 'cancelled by admin';
   if (g.slots) G.SLOTS.forEach(k => { g.slots[k] = G.emptySlot(); });
   G.addHistory(g, 'Cancelled by admin', req.user.email);
   await store.set('games', g.id, g);
@@ -284,7 +285,7 @@ app.post('/api/admin/schedule-upload', A, h(async req => {
   const shiftDays = TEST_MODE ? Math.round(Number(b.shiftDays) || 0) : 0;
   const s = await getSettings();
   const season = String(b.season || s.seasonLabel).trim();
-  await store.set('uploads', 'main', { text, season, shiftDays, filename: String(b.filename || ''), uploadedAt: new Date().toISOString(), by: req.user.email });
+  await store.set('uploads', 'main', { text, season, shiftDays, filename: String(b.filename || ''), uploadedAt: clock.now().toISOString(), by: req.user.email });
   const feeds = (s.feeds || []).filter(f => f.url !== 'upload:main').concat([{ url: 'upload:main', season, shiftDays }]);
   await saveSettings({ feeds });
   return runSync({ by: req.user.email });
