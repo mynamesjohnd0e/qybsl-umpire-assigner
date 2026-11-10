@@ -50,6 +50,20 @@ const fut = n => { const [y, m, d] = addDaysToKey(etDateKey(new Date()), n).spli
   assert.strictEqual(moved.slots.field.state, 'reconfirm'); assert.strictEqual(moved.slots.field.umpireId, 'amy@x.test');
   assert.strictEqual(ov.games.filter(g => g.track === 'student' && g.status !== 'cancelled').length, 2, 'the rematch 10 days out is untouched');
 
+  // Moving a game into the past keeps its umpire assigned (nothing to reconfirm).
+  const past = (() => { const [y, m, d] = addDaysToKey(etDateKey(new Date()), -2).split('-').map(Number); return `${m}/${d}/${y}`; })();
+  await call('POST', `/api/admin/games/${g1.id}/assign`, { slot: 'plate', umpireId: 'amy2@x.test', force: true }).catch(() => {});
+  const csvPast = csv2.split('\n').map(l => l.startsWith(`game,x,,${fut(4)},6:00 PM`) ? l.replace(fut(4), past) : l).join('\n');
+  const rp = await call('POST', '/api/admin/schedule-upload', { text: csvPast, filename: 'p.csv', season: 'Test Spring' });
+  assert.strictEqual(rp.counts.moved, 1, JSON.stringify(rp.counts));
+  const pg = (await call('GET', '/api/admin/overview')).games.find(g => g.id === g1.id);
+  assert(pg.past); assert.strictEqual(pg.slots.field.umpireId, 'amy@x.test');
+  // A leftover reconfirm on a past game is cleared, not released, by the job.
+  const jobs = require('../lib/jobs');
+  await jobs.expireReconfirms(new Date(Date.now() + 48 * 3600e3));
+  const pg2 = (await call('GET', '/api/admin/overview')).games.find(g => g.id === g1.id);
+  assert.strictEqual(pg2.slots.field.umpireId, 'amy@x.test'); assert.strictEqual(pg2.slots.field.state, 'assigned');
+
   // Test-copy guard: amy's reconfirm messages were held back.
   const out = await store.list('outbox');
   assert(out.filter(m => m.to === 'amy@x.test').every(m => m.status.includes('test copy')));
