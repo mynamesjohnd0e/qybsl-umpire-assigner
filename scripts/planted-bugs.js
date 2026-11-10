@@ -77,6 +77,35 @@ const BUGS = [
     find: 'if (!idx.has(key)) out.push(String(n).trim());',
     replace: 'if (false) out.push(String(n).trim());',
     tests: ['test/unit/teams.test.js', 'test/api/teams.test.js']
+  },
+  // Sprint 2 rules.
+  {
+    name: 'the away coach can enter the score',
+    file: 'lib/scores.js',
+    find: "if (!asDirector && coachSide(person, g) !== 'home') {",
+    replace: 'if (false) {',
+    tests: ['test/api/scores.test.js']
+  },
+  {
+    name: 'the home coach can confirm their own score',
+    file: 'lib/scores.js',
+    find: "if (coachSide(person, g) !== 'away') {",
+    replace: 'if (false) {',
+    tests: ['test/api/scores.test.js']
+  },
+  {
+    name: 'a forfeit is not 6-0',
+    file: 'lib/scores.js',
+    find: 'const FORFEIT_RUNS = 6;',
+    replace: 'const FORFEIT_RUNS = 5;',
+    tests: ['test/api/scores.test.js', 'test/unit/scores.test.js']
+  },
+  {
+    name: 'an out-of-town game auto-confirms instead of waiting for approval',
+    file: 'lib/scores.js',
+    find: "status: opp ? 'approval' : 'entered',",
+    replace: "status: 'entered',",
+    tests: ['test/api/scores-othertown.test.js']
   }
 ];
 

@@ -46,7 +46,11 @@ const umpireRoutes = [
 const coachRoutes = [
   ['GET', '/api/coach/games'],
   ['POST', '/api/coach/confirm', { gameId: 'nope', results: {} }],
-  ['POST', '/api/coach/rate', { gameId: 'nope', slot: 'plate', score: 3 }]
+  ['POST', '/api/coach/rate', { gameId: 'nope', slot: 'plate', score: 3 }],
+  ['GET', '/api/coach/scores'],
+  ['POST', '/api/coach/score', { gameId: 'nope', homeRuns: 1, awayRuns: 0 }],
+  ['POST', '/api/coach/score/confirm', { gameId: 'nope', homeRuns: 1, awayRuns: 0 }],
+  ['POST', '/api/coach/score/dispute', { gameId: 'nope', note: 'x' }]
 ];
 const userRoutes = [
   ['GET', '/api/umpire/board'],
