@@ -1,4 +1,6 @@
-# QYBSL Umpire Assigner
+# Quincy Youth Baseball - League Operations
+
+(Started as the QYBSL Umpire Assigner.) Developers and Claude Code: start with `CLAUDE.md`, then `docs/PLAN.md` and `docs/SPRINTS.md`.
 
 Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 student umpires (and summer 8s/9s), plus a coverage view for patched-umpire games. Built from the requirements spec: Node + Express, Firestore, Cloud Run, vanilla HTML/JS. Same setup as the practice scheduler.
 
