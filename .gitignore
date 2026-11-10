@@ -1,3 +1,6 @@
 node_modules/
 data/
 .env
+reports/
+.stryker-tmp*/
+stryker.baseline.json

@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Rules code: sign-up eligibility, payout and time math. Mutation gate >= 85% (CLAUDE.md). Uses the command runner because the suite is node:test; each mutant re-runs the unit + API tests.",
+  "packageManager": "npm",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "node --test test/unit/*.test.js test/api/*.test.js"
+  },
+  "coverageAnalysis": "off",
+  "mutate": [
+    "lib/games.js",
+    "lib/payouts.js",
+    "lib/time.js",
+    "lib/clock.js"
+  ],
+  "thresholds": { "high": 90, "low": 85, "break": 85 },
+  "concurrency": 4,
+  "timeoutMS": 60000,
+  "tempDirName": ".stryker-tmp-rules",
+  "reporters": ["clear-text", "progress"]
+}
