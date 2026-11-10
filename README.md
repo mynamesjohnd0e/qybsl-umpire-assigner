@@ -13,6 +13,7 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `lib/games.js` | Sign-up rules (plate-qualified, 2 per Mon–Sun week, no overlaps), swaps, urgent openings, admin overrides |
 | `lib/teams.js` | Teams and divisions as records; matching schedule team names to them |
 | `lib/roster.js` | Player roster upload: birthdate → league age (Apr 30 cutoff), birthdate discarded |
+| `lib/scores.js` | Scores: home enters, away confirms/disputes, 24h auto-confirm, director settles/approves/forfeits, "enter in SE" list |
 | `lib/coach.js` | Coach confirmations and ratings |
 | `lib/payouts.js` | Biweekly payout report |
 | `lib/jobs.js` | Sunday digest, day-before reminders, 72-hour gap alerts, reconfirm deadlines, coach nudges |

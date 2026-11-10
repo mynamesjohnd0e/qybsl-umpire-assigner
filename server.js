@@ -7,6 +7,7 @@ const auth = require('./lib/auth');
 const people = require('./lib/people');
 const G = require('./lib/games');
 const coach = require('./lib/coach');
+const scores = require('./lib/scores');
 const payouts = require('./lib/payouts');
 const jobs = require('./lib/jobs');
 const { runSync } = require('./lib/sync');
@@ -143,6 +144,21 @@ app.get('/api/coach/games', auth.requireCoach, h(async req => {
 app.post('/api/coach/confirm', auth.requireCoach, h(async req => { await coach.confirmGame(req.user, req.body.gameId, req.body.results); }));
 app.post('/api/coach/rate', auth.requireCoach, h(async req => { await coach.rate(req.user, req.body.gameId, req.body.slot, req.body.score, req.body.comment); }));
 
+// ── Scores (coach side) ───────────────────────────────────────────────────────
+app.get('/api/coach/scores', auth.requireCoach, h(async req => {
+  const now = clock.now();
+  const games = await coach.coachAllGames(req.user);
+  return {
+    games: games.filter(g => G.isLive(g)).sort((a, b) => b.start.localeCompare(a.start)).map(g => ({
+      id: g.id, division: g.division, home: g.home, away: g.away, summary: g.summary, field: g.field, start: g.start,
+      started: new Date(g.start) <= now, side: coach.coachSide(req.user, g), score: scores.scoreView(g)
+    }))
+  };
+}));
+app.post('/api/coach/score', auth.requireCoach, h(async req => scores.scoreView(await scores.enterScore(req.user, req.body.gameId, req.body))));
+app.post('/api/coach/score/confirm', auth.requireCoach, h(async req => scores.scoreView(await scores.confirmScore(req.user, req.body.gameId, req.body))));
+app.post('/api/coach/score/dispute', auth.requireCoach, h(async req => scores.scoreView(await scores.disputeScore(req.user, req.body.gameId, req.body.note))));
+
 // ── Admins and division directors ────────────────────────────────────────────
 const A = auth.requireAdmin;
 const DA = auth.requireDirectorOrAdmin;
@@ -178,6 +194,7 @@ app.get('/api/admin/overview', DA, h(async req => {
       movedAt: g.movedAt, cancelReason: g.cancelReason, source: g.source,
       patchedStatus: g.patchedStatus, patchedNote: g.patchedNote, patchedMoved: !!g.patchedMoved,
       past: new Date(g.start) <= now,
+      score: scores.scoreView(g),
       slots: g.slots ? Object.fromEntries(G.SLOTS.map(k => [k, { ...g.slots[k], name: g.slots[k].umpireId ? dir.get(g.slots[k].umpireId) || g.slots[k].umpireId : null }])) : null,
       history: (g.history || []).slice(-12)
     };
@@ -326,6 +343,20 @@ app.post('/api/admin/games/:id/urgent', DA, h(async req => {
 app.post('/api/admin/games/:id/patched', A, h(async req => { await G.setPatched(req.user.email, req.params.id, req.body.status, req.body.note); }));
 app.post('/api/admin/games/:id/confirm', A, h(async req => { await coach.confirmGame(req.user, req.params.id, req.body.results); }));
 app.post('/api/admin/swaps/:id/cancel', A, h(async req => { await G.cancelSwap(req.user.email, req.params.id, { admin: true }); }));
+
+// ── Scores (director / admin side) ────────────────────────────────────────────
+async function managedGame(req) {
+  const g = await store.get('games', req.params.id);
+  if (!g) throw new Error('Game not found.');
+  ensureManages(req.user, g);
+  return g;
+}
+app.post('/api/admin/games/:id/score/enter', DA, h(async req => { await managedGame(req); return scores.scoreView(await scores.enterScore(req.user, req.params.id, req.body, { asDirector: true })); }));
+app.post('/api/admin/games/:id/score/settle', DA, h(async req => { await managedGame(req); return scores.scoreView(await scores.settleScore(req.user, req.params.id, req.body)); }));
+app.post('/api/admin/games/:id/score/approve', DA, h(async req => { await managedGame(req); return scores.scoreView(await scores.approveScore(req.user, req.params.id)); }));
+app.post('/api/admin/games/:id/score/forfeit', DA, h(async req => { await managedGame(req); return scores.scoreView(await scores.forfeitScore(req.user, req.params.id, req.body.winner)); }));
+app.post('/api/admin/games/:id/score/entered-se', DA, h(async req => { await managedGame(req); await scores.markEnteredSE(req.user, req.params.id); }));
+app.get('/api/admin/enter-se', DA, h(async req => ({ list: await scores.enterSEList(req.user) })));
 
 app.post('/api/admin/sync', A, h(async req => runSync({ by: req.user.email })));
 
