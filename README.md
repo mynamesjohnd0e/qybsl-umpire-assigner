@@ -16,6 +16,8 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `lib/scores.js` | Scores: home enters, away confirms/disputes, 24h auto-confirm, director settles/approves/forfeits, "enter in SE" list |
 | `lib/standings.js` | Standings: win % (tie = half win), tiebreakers (head-to-head → runs allowed → coin toss) |
 | `lib/brackets.js` | Seeding and playoff brackets (single elimination, plus Majors 6-team double elimination) |
+| `lib/pitching.js` | Pitch-count rules engine: rest days, daily max, eligibility, finish-the-batter (all limits from Settings) |
+| `lib/pitchlog.js` | Pitch logging per game (innings as outs for 12-year-olds) and a player's outings |
 | `lib/coach.js` | Coach confirmations and ratings |
 | `lib/payouts.js` | Biweekly payout report |
 | `lib/jobs.js` | Sunday digest, day-before reminders, 72-hour gap alerts, reconfirm deadlines, coach nudges |

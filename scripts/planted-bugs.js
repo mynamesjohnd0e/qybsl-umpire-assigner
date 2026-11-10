@@ -149,6 +149,35 @@ const BUGS = [
     find: "status: 'final', source: 'import', enteredByRole: 'import', otherTown: false,",
     replace: "status: 'entered', source: 'import', enteredByRole: 'import', otherTown: false,",
     tests: ['test/api/standings.test.js']
+  },
+  // Sprint 4 rules.
+  {
+    name: 'rest-day bracket boundary off by one',
+    file: 'lib/pitching.js',
+    find: 'return brackets.filter(b => pitches > b).length;',
+    replace: 'return brackets.filter(b => pitches >= b).length;',
+    tests: ['test/unit/pitching.test.js']
+  },
+  {
+    name: 'finish-the-batter tolerance swallows real violations',
+    file: 'lib/pitching.js',
+    find: "if (over <= (limits.finishBatterTolerance ?? 0)) return { status: 'check-finished-batter', max, over };",
+    replace: "if (over <= 1000) return { status: 'check-finished-batter', max, over };",
+    tests: ['test/unit/pitching.test.js', 'test/api/pitching.test.js']
+  },
+  {
+    name: 'two games in a day do not combine',
+    file: 'lib/pitching.js',
+    find: 'return outings.reduce((n, o) => (o.date === dateKey ? n + (o.pitches || 0) : n), 0);',
+    replace: 'return outings.reduce((n, o) => (o.date === dateKey ? o.pitches || 0 : n), 0);',
+    tests: ['test/unit/pitching.test.js']
+  },
+  {
+    name: 'a rested pitcher is shown as available',
+    file: 'lib/pitching.js',
+    find: 'if (r > 0) {',
+    replace: 'if (false) {',
+    tests: ['test/unit/pitching.test.js', 'test/api/pitching.test.js']
   }
 ];
 

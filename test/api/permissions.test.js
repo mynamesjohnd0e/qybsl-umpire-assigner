@@ -50,11 +50,14 @@ const coachRoutes = [
   ['GET', '/api/coach/scores'],
   ['POST', '/api/coach/score', { gameId: 'nope', homeRuns: 1, awayRuns: 0 }],
   ['POST', '/api/coach/score/confirm', { gameId: 'nope', homeRuns: 1, awayRuns: 0 }],
-  ['POST', '/api/coach/score/dispute', { gameId: 'nope', note: 'x' }]
+  ['POST', '/api/coach/score/dispute', { gameId: 'nope', note: 'x' }],
+  ['POST', '/api/coach/pitches', { gameId: 'nope', playerId: 'nope', pitches: 10 }]
 ];
 const userRoutes = [
   ['GET', '/api/umpire/board'],
-  ['PUT', '/api/me', {}]
+  ['PUT', '/api/me', {}],
+  ['GET', '/api/standings'],
+  ['GET', '/api/pitching/eligibility?playerId=nope']
 ];
 
 test('admin routes: only the board admin gets in', async () => {

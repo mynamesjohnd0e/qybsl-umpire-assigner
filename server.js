@@ -8,6 +8,7 @@ const people = require('./lib/people');
 const G = require('./lib/games');
 const coach = require('./lib/coach');
 const scores = require('./lib/scores');
+const pitchlog = require('./lib/pitchlog');
 const { standings } = require('./lib/standings');
 const brackets = require('./lib/brackets');
 const payouts = require('./lib/payouts');
@@ -160,6 +161,10 @@ app.get('/api/coach/scores', auth.requireCoach, h(async req => {
 app.post('/api/coach/score', auth.requireCoach, h(async req => scores.scoreView(await scores.enterScore(req.user, req.body.gameId, req.body))));
 app.post('/api/coach/score/confirm', auth.requireCoach, h(async req => scores.scoreView(await scores.confirmScore(req.user, req.body.gameId, req.body))));
 app.post('/api/coach/score/dispute', auth.requireCoach, h(async req => scores.scoreView(await scores.disputeScore(req.user, req.body.gameId, req.body.note))));
+
+// ── Pitch counts ──────────────────────────────────────────────────────────────
+app.post('/api/coach/pitches', auth.requireCoach, h(async req => pitchlog.logPitches(req.user, req.body || {})));
+app.get('/api/pitching/eligibility', auth.requireUser, h(async req => pitchlog.playerEligibility(req.query.playerId, req.query.date)));
 
 // ── Standings (coaches, directors and the board see them in the app) ──────────
 app.get('/api/standings', auth.requireUser, h(async () => {
@@ -415,6 +420,10 @@ app.post('/api/admin/games/:id/score/approve', DA, h(async req => { await manage
 app.post('/api/admin/games/:id/score/forfeit', DA, h(async req => { await managedGame(req); return scores.scoreView(await scores.forfeitScore(req.user, req.params.id, req.body.winner)); }));
 app.post('/api/admin/games/:id/score/entered-se', DA, h(async req => { await managedGame(req); await scores.markEnteredSE(req.user, req.params.id); }));
 app.get('/api/admin/enter-se', DA, h(async req => ({ list: await scores.enterSEList(req.user) })));
+
+// Pitch counts: a director/admin can log for a coach, and view a game's log.
+app.post('/api/admin/games/:id/pitches', DA, h(async req => { await managedGame(req); return pitchlog.logPitches(req.user, { ...req.body, gameId: req.params.id }, { asDirector: true }); }));
+app.get('/api/admin/games/:id/pitchlog', DA, h(async req => { await managedGame(req); return { log: await pitchlog.gameLog(req.params.id) }; }));
 
 app.post('/api/admin/sync', A, h(async req => runSync({ by: req.user.email })));
 
