@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 2 (Dec 7–20, 2026) – Scores: home enters, away confirms/disputes, 24h auto-confirm, director settles/approves/forfeits, "enter in SE" list.** See `docs/SPRINTS.md`. (Sprints 0 and 1 are merged.)
+**Current sprint: Sprint 3 (Dec 21–Jan 10, 2027) – Standings and brackets: win % with tiebreakers (head-to-head → runs allowed → coin toss), seeding, single- and double-elimination brackets.** See `docs/SPRINTS.md`. (Sprints 0–2 are merged.)
 
 ## Stack and conventions
 

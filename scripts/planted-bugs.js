@@ -106,6 +106,49 @@ const BUGS = [
     find: "status: opp ? 'approval' : 'entered',",
     replace: "status: 'entered',",
     tests: ['test/api/scores-othertown.test.js']
+  },
+  // Sprint 3 rules.
+  {
+    name: 'a standings tie counts as a full win, not half',
+    file: 'lib/standings.js',
+    find: 'const winPct = r => (r.gp ? (r.w + 0.5 * r.t) / r.gp : 0);',
+    replace: 'const winPct = r => (r.gp ? (r.w + 1 * r.t) / r.gp : 0);',
+    tests: ['test/unit/standings.test.js']
+  },
+  {
+    name: 'runs allowed is miscounted',
+    file: 'lib/standings.js',
+    find: 'h.ra += ar; a.ra += hr;',
+    replace: 'h.ra += 0; a.ra += hr;',
+    tests: ['test/unit/standings.test.js', 'test/api/standings.test.js']
+  },
+  {
+    name: 'head-to-head is skipped as a tiebreaker',
+    file: 'lib/standings.js',
+    find: 'if (level === 1) return headToHeadPct(t, teams, ctx.games);',
+    replace: 'if (level === 1) return 0;',
+    tests: ['test/unit/standings.test.js']
+  },
+  {
+    name: 'the higher seed is not made home',
+    file: 'lib/brackets.js',
+    find: 'm.homeSeed = Math.min(sa, sb); m.awaySeed = Math.max(sa, sb); m.ready = true;',
+    replace: 'm.homeSeed = Math.max(sa, sb); m.awaySeed = Math.min(sa, sb); m.ready = true;',
+    tests: ['test/unit/brackets.test.js', 'test/api/brackets.test.js']
+  },
+  {
+    name: 'the "if needed" final is never triggered',
+    file: 'lib/brackets.js',
+    find: 'if (winnerSeed !== wbSeed) { b.matches.GF2.needed = true; b.finalId = \'GF2\'; }',
+    replace: 'if (false) { b.matches.GF2.needed = true; b.finalId = \'GF2\'; }',
+    tests: ['test/unit/brackets.test.js']
+  },
+  {
+    name: 'imported scores are not marked final',
+    file: 'lib/sync.js',
+    find: "status: 'final', source: 'import', enteredByRole: 'import', otherTown: false,",
+    replace: "status: 'entered', source: 'import', enteredByRole: 'import', otherTown: false,",
+    tests: ['test/api/standings.test.js']
   }
 ];
 

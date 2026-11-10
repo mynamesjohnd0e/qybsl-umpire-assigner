@@ -8,6 +8,8 @@ const people = require('./lib/people');
 const G = require('./lib/games');
 const coach = require('./lib/coach');
 const scores = require('./lib/scores');
+const { standings } = require('./lib/standings');
+const brackets = require('./lib/brackets');
 const payouts = require('./lib/payouts');
 const jobs = require('./lib/jobs');
 const { runSync } = require('./lib/sync');
@@ -158,6 +160,62 @@ app.get('/api/coach/scores', auth.requireCoach, h(async req => {
 app.post('/api/coach/score', auth.requireCoach, h(async req => scores.scoreView(await scores.enterScore(req.user, req.body.gameId, req.body))));
 app.post('/api/coach/score/confirm', auth.requireCoach, h(async req => scores.scoreView(await scores.confirmScore(req.user, req.body.gameId, req.body))));
 app.post('/api/coach/score/dispute', auth.requireCoach, h(async req => scores.scoreView(await scores.disputeScore(req.user, req.body.gameId, req.body.note))));
+
+// ── Standings (coaches, directors and the board see them in the app) ──────────
+app.get('/api/standings', auth.requireUser, h(async () => {
+  const games = (await store.list('games')).filter(g => g.score?.status === 'final' && G.isLive(g));
+  const coinTosses = await store.list('cointosses');
+  const byDiv = {};
+  for (const g of games) (byDiv[g.division] ||= []).push(g);
+  const out = {};
+  for (const [division, gs] of Object.entries(byDiv)) {
+    out[division] = standings(gs, { coinTosses: coinTosses.filter(c => c.division === division) });
+  }
+  return { standings: out };
+}));
+app.post('/api/admin/standings/coin-toss', auth.requireDirectorOrAdmin, h(async req => {
+  const division = String(req.body?.division || '').trim();
+  const order = (Array.isArray(req.body?.order) ? req.body.order : []).map(x => String(x).trim()).filter(Boolean);
+  if (!division || order.length < 2) throw new Error('Give the division and the finishing order of the tied teams.');
+  ensureDivision(req.user, division);
+  const id = `ct_${division.replace(/\W+/g, '-')}_${clock.now().getTime()}`;
+  await store.set('cointosses', id, { id, division, order, by: req.user.email, at: clock.now().toISOString() });
+  return { id, division, order };
+}));
+
+// ── Playoff brackets ──────────────────────────────────────────────────────────
+function ensureDivision(user, division) {
+  if (!auth.managesDivision(user, division)) { const e = new Error('You manage only your division.'); e.status = 403; throw e; }
+}
+// Seeds for a division: a director's saved override, else the standings order.
+async function seedsFor(division, finals) {
+  const override = await store.get('bracketseeds', division);
+  if (override?.order?.length) return override.order;
+  const cts = (await store.list('cointosses')).filter(c => c.division === division);
+  return standings(finals, { coinTosses: cts }).map(r => r.team);
+}
+app.post('/api/admin/bracket/seeds', auth.requireDirectorOrAdmin, h(async req => {
+  const division = String(req.body?.division || '').trim();
+  const order = (Array.isArray(req.body?.order) ? req.body.order : []).map(x => String(x).trim()).filter(Boolean);
+  if (!division || order.length < 2) throw new Error('Give the division and the seed order (team names, best first).');
+  ensureDivision(req.user, division);
+  await store.set('bracketseeds', division, { division, order, by: req.user.email, at: clock.now().toISOString() });
+  return { division, order };
+}));
+app.get('/api/admin/bracket', auth.requireDirectorOrAdmin, h(async req => {
+  const division = String(req.query.division || '').trim();
+  if (!division) throw new Error('Which division?');
+  ensureDivision(req.user, division);
+  const finals = (await store.list('games')).filter(g => g.division === division && g.score?.status === 'final' && G.isLive(g));
+  const seeds = await seedsFor(division, finals);
+  const format = brackets.formatFor(division);
+  if (seeds.length < 2 || (format === 'double' && seeds.length !== 6)) {
+    return { division, format, seeds, matches: [], champion: null, ready: false, note: format === 'double' ? 'Majors needs exactly 6 seeded teams.' : 'Not enough teams seeded yet.' };
+  }
+  const b = brackets.buildBracket(division, seeds);
+  brackets.advanceFromGames(b, finals);
+  return { division, format: b.format, seeds, matches: brackets.withTeams(b), champion: brackets.champion(b), complete: brackets.isComplete(b), ready: true };
+}));
 
 // ── Admins and division directors ────────────────────────────────────────────
 const A = auth.requireAdmin;
