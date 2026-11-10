@@ -28,7 +28,7 @@ const h = fn => async (req, res) => {
   }
 };
 
-app.get('/healthz', (_req, res) => res.send('ok'));
+app.get('/health', (_req, res) => res.send('ok'));
 
 // ── Sign up / sign in ────────────────────────────────────────────────────────
 app.post('/api/auth/signup', h(async (req, res) => {
