@@ -11,7 +11,9 @@
     "lib/games.js",
     "lib/payouts.js",
     "lib/time.js",
-    "lib/clock.js"
+    "lib/clock.js",
+    "lib/roster.js",
+    "lib/teams.js"
   ],
   "thresholds": { "high": 90, "low": 85, "break": 85 },
   "concurrency": 4,

@@ -11,6 +11,8 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `server.js` | Web server and all the URLs the pages call |
 | `lib/sync.js`, `lib/ical.js` | Reads the SportsEngine calendar feed and handles new, moved and cancelled games |
 | `lib/games.js` | Sign-up rules (plate-qualified, 2 per Mon–Sun week, no overlaps), swaps, urgent openings, admin overrides |
+| `lib/teams.js` | Teams and divisions as records; matching schedule team names to them |
+| `lib/roster.js` | Player roster upload: birthdate → league age (Apr 30 cutoff), birthdate discarded |
 | `lib/coach.js` | Coach confirmations and ratings |
 | `lib/payouts.js` | Biweekly payout report |
 | `lib/jobs.js` | Sunday digest, day-before reminders, 72-hour gap alerts, reconfirm deadlines, coach nudges |
@@ -131,7 +133,11 @@ Then tick "Send texts" in Settings. Until then everything still goes by email, a
 Umpires: `name, email, mobile, parent_name, parent_email, parent_mobile, venmo, plate_qualified`
 Only name and email are required. Umpires fill in the rest at sign-up.
 
-Coaches: `name, email, mobile, team, division` — one row per team, team names spelled as in SportsEngine.
+Coaches: `name, email, mobile, team, division` — one row per team, team names spelled as in SportsEngine. Uploading the coach list also creates a team record (name, division, head coach) for each team, across all five divisions (Farm 8, Farm 9, Minors, Majors, Babe Ruth). When a schedule is uploaded, any team name that matches no record is reported, so misspellings get noticed.
+
+Players (Minors/Majors): `name, number, birthdate, team, division`. The birthdate becomes a **league age** (age on April 30 of the season year) and is then discarded — players are minors, so only name, number and league age are kept. Re-uploads are safe: a trade moves the player's record, a dropped player is flagged (not deleted).
+
+**Division directors**: a board admin can make someone a director of one or more divisions (People page, or `POST /api/admin/people` with `role: director`). A director can staff umpires on games in their division and see those games, but cannot reach board-admin tools. They sign in with email + PIN like everyone else.
 
 ## How games are sorted
 

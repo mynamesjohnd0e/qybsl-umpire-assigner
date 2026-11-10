@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 0 (Nov 16–22, 2026) – test foundation, no new features.** See `docs/SPRINTS.md`.
+**Current sprint: Sprint 1 (Nov 23–Dec 6, 2026) – Foundation: rename, teams and divisions as records, division-director role, roster upload (league age), coach list across all five divisions.** See `docs/SPRINTS.md`. (Sprint 0, the test foundation, is merged.)
 
 ## Stack and conventions
 

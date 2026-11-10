@@ -48,6 +48,35 @@ const BUGS = [
     find: 'u.parentEmail ? sendEmail(u.parentEmail,',
     replace: 'false ? sendEmail(u.parentEmail,',
     tests: ['test/api/messaging.test.js']
+  },
+  // Sprint 1 rules.
+  {
+    name: 'league age ignores the April 30 cutoff',
+    file: 'lib/roster.js',
+    find: 'if (b.m > 4 || (b.m === 4 && b.d > 30)) age -= 1;',
+    replace: 'if (false) age -= 1;',
+    tests: ['test/unit/roster.test.js', 'test/api/roster-players.test.js']
+  },
+  {
+    name: 'a missing player is deleted instead of flagged',
+    file: 'lib/roster.js',
+    find: "await store.set('players', p.id, { ...p, missing: true, missingSince: clock.now().toISOString() });",
+    replace: "await store.del('players', p.id);",
+    tests: ['test/api/roster-players.test.js']
+  },
+  {
+    name: 'division director scope removed (can manage any division)',
+    file: 'lib/auth.js',
+    find: '(division && u.director && (u.director.divisions || []).includes(division))',
+    replace: 'true',
+    tests: ['test/api/director.test.js']
+  },
+  {
+    name: 'unmatched team names never reported',
+    file: 'lib/teams.js',
+    find: 'if (!idx.has(key)) out.push(String(n).trim());',
+    replace: 'if (false) out.push(String(n).trim());',
+    tests: ['test/unit/teams.test.js', 'test/api/teams.test.js']
   }
 ];
 

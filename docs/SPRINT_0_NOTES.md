@@ -59,11 +59,11 @@ a full pass over the large files is a CI-length job. Captured this sprint:
 
 - `lib/clock.js`: **100%** (the surviving `setNow(null/undefined)` mutants were
   closed with tests — the exact "surviving mutants get tests" step).
-- `lib/payouts.js` + `lib/time.js`: baseline recorded in the PR; surviving
-  mutants are the follow-up for closing to ≥ 85%.
-- `lib/games.js` (the main rules file): mutation run is wired (`npm run
-  mutate:rules`) and belongs in CI given its size; closing its survivors to
-  ≥ 85% is the remaining mutation work.
+- `lib/payouts.js`: **100%**, `lib/time.js`: **100%** (0 mutants survived the
+  full `npm test` suite). Both are well above the 85% rules threshold.
+- `lib/games.js` (the main rules file, ~800 mutants): mutation run is wired
+  (`npm run mutate:rules`) and belongs in CI given its size; closing any
+  survivors to ≥ 85% is the remaining mutation work.
 
 ## Not done this sprint (by design)
 

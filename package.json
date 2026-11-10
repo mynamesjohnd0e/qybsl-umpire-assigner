@@ -1,7 +1,7 @@
 {
   "name": "qybsl-umpire-assigner",
   "version": "1.0.0",
-  "description": "QYBSL Umpire Assigner: Farm umpire sign-up, swaps, reminders, confirmations and payouts",
+  "description": "Quincy Youth Baseball - League Operations: umpire scheduling, teams, rosters, scores and more for QYBSL",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
