@@ -1,4 +1,4 @@
-// QYBSL Umpires — browser app (vanilla JS).
+// Quincy Youth Baseball - League Operations — browser app (vanilla JS).
 'use strict';
 
 const TZ = 'America/New_York';

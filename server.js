@@ -143,14 +143,26 @@ app.get('/api/coach/games', auth.requireCoach, h(async req => {
 app.post('/api/coach/confirm', auth.requireCoach, h(async req => { await coach.confirmGame(req.user, req.body.gameId, req.body.results); }));
 app.post('/api/coach/rate', auth.requireCoach, h(async req => { await coach.rate(req.user, req.body.gameId, req.body.slot, req.body.score, req.body.comment); }));
 
-// ── Admins ───────────────────────────────────────────────────────────────────
+// ── Admins and division directors ────────────────────────────────────────────
 const A = auth.requireAdmin;
+const DA = auth.requireDirectorOrAdmin;
 
-app.get('/api/admin/overview', A, h(async () => {
+// Throw a 403 unless the user (admin, or a director of the game's division) may
+// manage this game.
+function ensureManages(user, game) {
+  if (!auth.managesDivision(user, game.division)) {
+    const e = new Error(`You manage only your division, not ${game.division || 'this'} games.`);
+    e.status = 403;
+    throw e;
+  }
+}
+
+app.get('/api/admin/overview', DA, h(async req => {
   const [games, ppl, swaps, runs, jobState] = await Promise.all([
     store.list('games'), store.list('people'), store.list('swaps'), store.list('syncRuns'), store.get('settings', 'jobs')
   ]);
   const s = await getSettings();
+  const isAdmin = req.user.isAdmin;
   const dir = new Map(ppl.map(p => [p.email, p.name]));
   const now = clock.now();
   const lastRun = runs.sort((a, b) => b.at.localeCompare(a.at))[0] || null;
@@ -170,24 +182,43 @@ app.get('/api/admin/overview', A, h(async () => {
       history: (g.history || []).slice(-12)
     };
   });
-  const unconfirmed = view.filter(g => g.track === 'student' && g.status !== 'cancelled' && g.past &&
+  // A division director sees only their division's games (and the umpires they
+  // need to staff them); the board admin sees everything.
+  const scoped = isAdmin ? view : view.filter(g => auth.managesDivision(req.user, g.division));
+  const peopleOut = isAdmin
+    ? ppl.map(people.adminView).map(p => ({ ...p, isAdmin: s.adminEmails.includes(p.email) }))
+    : ppl.filter(p => p.umpire).map(people.adminView);
+  const unconfirmed = scoped.filter(g => g.track === 'student' && g.status !== 'cancelled' && g.past &&
     G.SLOTS.some(k => g.slots[k].umpireId && !g.slots[k].worked)).length;
   return {
-    games: view,
-    people: ppl.map(people.adminView).map(p => ({ ...p, isAdmin: s.adminEmails.includes(p.email) })),
+    games: scoped,
+    people: peopleOut,
     swaps: swaps.filter(x => x.state === 'open').map(x => ({ ...x, fromName: dir.get(x.fromId) })),
-    lastRun, jobs: jobState || {}, today: etDateKey(now),
+    lastRun, jobs: jobState || {}, today: etDateKey(now), scope: isAdmin ? 'all' : (req.user.director?.divisions || []),
     counts: {
-      approvals: ppl.filter(p => p.registered && p.umpire && !p.umpire.approved).length,
-      coaches: ppl.filter(p => p.registered && p.coach?.pending).length,
+      approvals: isAdmin ? ppl.filter(p => p.registered && p.umpire && !p.umpire.approved).length : 0,
+      coaches: isAdmin ? ppl.filter(p => p.registered && p.coach?.pending).length : 0,
       unconfirmed,
-      open: view.filter(g => g.track === 'student' && g.status !== 'cancelled' && !g.past && g.coverage !== 'Covered').length
+      open: scoped.filter(g => g.track === 'student' && g.status !== 'cancelled' && !g.past && g.coverage !== 'Covered').length
     }
   };
 }));
 
 app.post('/api/admin/roster/umpires', A, h(async req => people.importUmpires(typeof req.body === 'string' ? req.body : req.body.csv)));
 app.post('/api/admin/roster/coaches', A, h(async req => people.importCoaches(typeof req.body === 'string' ? req.body : req.body.csv)));
+app.post('/api/admin/roster/players', A, h(async req => {
+  const roster = require('./lib/roster');
+  const b = typeof req.body === 'string' ? { csv: req.body } : (req.body || {});
+  return roster.importPlayers(b.csv, { season: b.season, seasonYear: b.seasonYear });
+}));
+app.get('/api/admin/players', A, h(async () => ({ players: (await store.list('players')).sort((a, b) => (a.team + a.name).localeCompare(b.team + b.name)) })));
+app.get('/api/admin/teams', A, h(async () => {
+  const { DIVISIONS } = require('./lib/teams');
+  const ppl = new Map((await store.list('people')).map(p => [p.email, p.name]));
+  const teams = (await store.list('teams')).sort((a, b) => (a.division + a.name).localeCompare(b.division + b.name))
+    .map(t => ({ ...t, headCoach: t.headCoachEmail ? ppl.get(t.headCoachEmail) || t.headCoachEmail : null }));
+  return { teams, divisions: DIVISIONS };
+}));
 
 app.post('/api/admin/people', A, h(async req => {
   const b = req.body || {};
@@ -197,8 +228,18 @@ app.post('/api/admin/people', A, h(async req => {
   const p = { email, name: String(b.name || '').trim(), mobile: String(b.mobile || '').trim(), registered: false, pinHash: null, createdAt: clock.now().toISOString(), umpire: null, coach: null };
   if (b.role === 'umpire') p.umpire = { onRoster: true, approved: true, active: true, plateQualified: !!b.plateQualified, parentName: b.parentName || '', parentEmail: auth.normEmail(b.parentEmail), parentMobile: b.parentMobile || '', venmo: b.venmo || '' };
   if (b.role === 'coach') p.coach = { onRoster: true, pending: false, teams: b.team ? [{ team: b.team, division: b.division || '' }] : [] };
+  if (b.role === 'director') p.director = { divisions: cleanDivisions(b.divisions || (b.division ? [b.division] : [])) };
   await store.set('people', email, p);
 }));
+
+// Keep only real division names (guards against typos granting nothing useful).
+function cleanDivisions(list) {
+  const { DIVISIONS } = require('./lib/teams');
+  const want = (Array.isArray(list) ? list : [list]).map(d => String(d || '').trim());
+  const bad = want.filter(d => d && !DIVISIONS.includes(d));
+  if (bad.length) throw new Error(`Not a division: ${bad.join(', ')}. Use one of: ${DIVISIONS.join(', ')}.`);
+  return [...new Set(want.filter(Boolean))];
+}
 
 app.put('/api/admin/people/:email', A, h(async req => {
   const email = auth.normEmail(req.params.email);
@@ -215,6 +256,11 @@ app.put('/api/admin/people/:email', A, h(async req => {
     p.coach = p.coach || { onRoster: true, teams: [] };
     if (Array.isArray(b.coach.teams)) p.coach.teams = b.coach.teams.filter(t => t.team).map(t => ({ team: String(t.team).trim(), division: String(t.division || '').trim() }));
     p.coach.pending = false;
+  }
+  // Grant, change or clear division-director status. An empty list removes it.
+  if (b.director !== undefined) {
+    const divisions = cleanDivisions(b.director?.divisions ?? b.director ?? []);
+    p.director = divisions.length ? { divisions } : null;
   }
   await store.set('people', email, p);
 }));
@@ -265,8 +311,18 @@ app.post('/api/admin/games/:id/cancel', A, h(async req => {
   }
 }));
 
-app.post('/api/admin/games/:id/assign', A, h(async req => { await G.adminAssign(req.user.email, req.params.id, req.body.slot, req.body.umpireId || null, !!req.body.force); }));
-app.post('/api/admin/games/:id/urgent', A, h(async req => { await G.urgentOpening(req.user.email, req.params.id, req.body.slot); }));
+app.post('/api/admin/games/:id/assign', DA, h(async req => {
+  const g = await store.get('games', req.params.id);
+  if (!g) throw new Error('Game not found.');
+  ensureManages(req.user, g);
+  await G.adminAssign(req.user.email, req.params.id, req.body.slot, req.body.umpireId || null, !!req.body.force);
+}));
+app.post('/api/admin/games/:id/urgent', DA, h(async req => {
+  const g = await store.get('games', req.params.id);
+  if (!g) throw new Error('Game not found.');
+  ensureManages(req.user, g);
+  await G.urgentOpening(req.user.email, req.params.id, req.body.slot);
+}));
 app.post('/api/admin/games/:id/patched', A, h(async req => { await G.setPatched(req.user.email, req.params.id, req.body.status, req.body.note); }));
 app.post('/api/admin/games/:id/confirm', A, h(async req => { await coach.confirmGame(req.user, req.params.id, req.body.results); }));
 app.post('/api/admin/swaps/:id/cancel', A, h(async req => { await G.cancelSwap(req.user.email, req.params.id, { admin: true }); }));
