@@ -25,6 +25,21 @@ steps:
       - --max-instances=2
       - --update-env-vars=FIRESTORE_PROJECT_ID=$PROJECT_ID,FIRESTORE_DATABASE_ID=${_FIRESTORE_DB},ADMIN_EMAILS=${_ADMIN_EMAILS}
 
+  # Test copy: same code, separate database, TEST_MODE banner, and it only
+  # ever messages John's own addresses.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}-test
+      - --image=gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --max-instances=1
+      - --update-env-vars=FIRESTORE_PROJECT_ID=$PROJECT_ID,FIRESTORE_DATABASE_ID=umpires-test,ADMIN_EMAILS=${_ADMIN_EMAILS},TEST_MODE=1,TEST_SEND_ONLY=^higgins\.qyb
+
 images:
   - gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
 

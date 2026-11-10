@@ -12,6 +12,7 @@ const { runSync } = require('./lib/sync');
 const { getSettings, saveSettings } = require('./lib/settings');
 const { weekKey, etDateKey } = require('./lib/time');
 
+const TEST_MODE = process.env.TEST_MODE === '1';
 const app = express();
 app.set('trust proxy', true);
 app.use(express.json({ limit: '2mb' }));
@@ -61,7 +62,7 @@ app.get('/api/me', h(async req => {
     const d = await store.get('people', s.directorEmail);
     director = { name: d?.name || 'Director of Umpires', email: s.directorEmail, mobile: d?.mobile || '' };
   }
-  return { me: req.user ? people.selfView(req.user) : null, season: s.seasonLabel, weeklyCap: s.weeklyCap, payRate: s.payRate, director };
+  return { me: req.user ? people.selfView(req.user) : null, season: s.seasonLabel, weeklyCap: s.weeklyCap, payRate: s.payRate, director, testMode: TEST_MODE };
 }));
 
 app.put('/api/me', auth.requireUser, h(async req => {
@@ -270,6 +271,44 @@ app.post('/api/admin/games/:id/confirm', A, h(async req => { await coach.confirm
 app.post('/api/admin/swaps/:id/cancel', A, h(async req => { await G.cancelSwap(req.user.email, req.params.id, { admin: true }); }));
 
 app.post('/api/admin/sync', A, h(async req => runSync({ by: req.user.email })));
+
+// Upload the schedule exported from SportsEngine HQ (CSV) or an .ics file.
+// Each upload replaces the last one and is synced right away; later uploads
+// work like a feed refresh (moved and cancelled games are handled the same way).
+app.post('/api/admin/schedule-upload', A, h(async req => {
+  const b = req.body || {};
+  const text = String(b.text || '');
+  if (text.length < 20) throw new Error('That file looks empty.');
+  const { looksLikeSeCsv } = require('./lib/secsv');
+  if (!looksLikeSeCsv(text) && !text.includes('BEGIN:VCALENDAR')) throw new Error('This doesn\'t look like a SportsEngine schedule export (CSV) or a calendar (.ics) file.');
+  const shiftDays = TEST_MODE ? Math.round(Number(b.shiftDays) || 0) : 0;
+  const s = await getSettings();
+  const season = String(b.season || s.seasonLabel).trim();
+  await store.set('uploads', 'main', { text, season, shiftDays, filename: String(b.filename || ''), uploadedAt: new Date().toISOString(), by: req.user.email });
+  const feeds = (s.feeds || []).filter(f => f.url !== 'upload:main').concat([{ url: 'upload:main', season, shiftDays }]);
+  await saveSettings({ feeds });
+  return runSync({ by: req.user.email });
+}));
+
+app.get('/api/admin/schedule-upload', A, h(async () => {
+  const d = await store.get('uploads', 'main');
+  return d ? { filename: d.filename, uploadedAt: d.uploadedAt, by: d.by, season: d.season, shiftDays: d.shiftDays, size: d.text.length } : {};
+}));
+
+// Test copy only: wipe practice data and start over.
+app.post('/api/admin/test/reset', A, h(async req => {
+  if (!TEST_MODE) throw new Error('Reset is only available on the test copy.');
+  const out = {};
+  for (const c of ['games', 'swaps', 'ratings', 'payouts', 'syncLog', 'syncRuns', 'outbox', 'uploads']) out[c] = await store.clear(c);
+  if (!req.body?.keepPeople) {
+    const s = await getSettings();
+    for (const p of await store.list('people')) if (!s.adminEmails.includes(p.email)) await store.del('people', p.email);
+  }
+  await store.update('settings', 'jobs', { lastWeekly: null, lastGapAlert: null, lastNudge: null });
+  const s = await getSettings();
+  await saveSettings({ feeds: (s.feeds || []).filter(f => f.url !== 'upload:main') });
+  return out;
+}));
 app.get('/api/admin/synclog', A, h(async () => {
   const [runs, log] = await Promise.all([store.list('syncRuns'), store.list('syncLog')]);
   return {

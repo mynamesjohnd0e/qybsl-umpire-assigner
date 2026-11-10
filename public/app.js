@@ -94,6 +94,15 @@ function defaultTab() {
   return 'account';
 }
 
+function testBanner() {
+  if (!S.info.testMode || document.querySelector('.test-banner')) return;
+  const b = document.createElement('div');
+  b.className = 'note warn test-banner';
+  b.style.cssText = 'margin:0;border-radius:0;text-align:center';
+  b.innerHTML = '<b>TEST COPY</b> · practice data only. Messages only go to John\'s addresses.';
+  document.querySelector('.stripe').after(b);
+}
+
 function renderShell() {
   $('#who').innerHTML = `<span>${esc(S.me.name)}</span><button id="logout">Sign out</button>`;
   $('#logout').onclick = async () => { await api('POST', '/api/auth/logout'); S.me = null; S.tab = null; S.cache = {}; boot(); };
@@ -101,6 +110,7 @@ function renderShell() {
   const groups = tabs.filter(t => t[0] === 'g' && t[1]).length;
   $('#tabs').hidden = false;
   $('#main').classList.remove('solo');
+  testBanner();
   $('#tabs').innerHTML = tabs.map(([k, l]) => k === 'g' ? (groups > 1 && l ? `<span class="tab-group">${esc(l)}</span>` : '') :
     `<button class="tab ${S.tab === k ? 'active' : ''}" data-tab="${k}">${esc(l)}<span data-badge="${k}"></span></button>`).join('');
   $('#tabs').onclick = e => {
@@ -130,6 +140,7 @@ async function loadTab() {
 // ── Sign in / sign up ────────────────────────────────────────────────────────
 function renderAuth() {
   $('#who').innerHTML = '';
+  testBanner();
   $('#tabs').hidden = true;
   const main = $('#main');
   main.classList.add('solo');
@@ -420,7 +431,7 @@ async function viewCoverage(main) {
       <input id="c-q" placeholder="Search team, field, umpire" value="${esc(f.q)}">
     </div>
     ${games.length ? Object.entries(groupBy(games, g => g.week)).map(([wk, list]) => `<section class="week"><div class="week-h"><b>${weekLabel(wk)}</b><span class="small muted">${list.length} game${list.length > 1 ? 's' : ''}</span></div>${list.map(adminRow).join('')}</section>`).join('')
-      : `<div class="empty">${d.games.length ? 'No games match these filters.' : 'No games yet. Add your SportsEngine feed under Schedule sync, then tap Sync now.'}</div>`}`;
+      : `<div class="empty">${d.games.length ? 'No games match these filters.' : 'No games yet. Upload your SportsEngine schedule under Schedule sync.'}</div>`}`;
   for (const [id, key] of [['c-week', 'week'], ['c-div', 'division'], ['c-track', 'track'], ['c-status', 'status']]) {
     $('#' + id).value = f[key];
     $('#' + id).onchange = e => { f[key] = e.target.value; viewCoverage(main); };
@@ -714,14 +725,26 @@ async function viewPayouts(main, end) {
 
 // ── Admin: schedule sync ─────────────────────────────────────────────────────
 async function viewSync(main) {
-  const [st, log] = await Promise.all([api('GET', '/api/admin/settings'), api('GET', '/api/admin/synclog')]);
+  const [st, log, up] = await Promise.all([api('GET', '/api/admin/settings'), api('GET', '/api/admin/synclog'), api('GET', '/api/admin/schedule-upload')]);
   const last = log.runs[0];
   const changeBadge = { new: 'b-blue', moved: 'b-yellow', cancelled: 'b-red', removed: 'b-red', reinstated: 'b-green' };
-  main.innerHTML = `<div class="spread"><div><h2>Schedule sync</h2><p class="sub">The app reads your SportsEngine calendar feed every night and whenever you tap Sync now.</p></div><button class="btn" id="s-now">Sync now</button></div>
-    <h3>SportsEngine feeds</h3>
-    <p class="small muted">In SportsEngine, open the league calendar (or a team schedule), choose Subscribe, and copy the iCal link. Add one feed per season.</p>
+  const test = S.info.testMode;
+  const linkFeeds = st.feeds.filter(f => !f.url.startsWith('upload:'));
+  main.innerHTML = `<div class="spread"><div><h2>Schedule sync</h2><p class="sub">Games come from SportsEngine: an uploaded schedule export, a calendar feed link, or both. The app checks again every night and whenever you tap Sync now.</p></div><button class="btn" id="s-now">Sync now</button></div>
+    <h3>Upload the schedule from SportsEngine HQ</h3>
+    <p class="small muted">In SportsEngine HQ, export the season's game schedule as CSV and upload it here. Upload a fresh export whenever games change: moved and cancelled games are picked up just like a feed, and umpires on moved games are asked to reconfirm.</p>
+    ${up.uploadedAt ? `<p class="small mt">Current upload: <b>${esc(up.filename || 'schedule')}</b> · ${fmtStamp(up.uploadedAt)} by ${esc(up.by)} · ${esc(up.season)}${up.shiftDays ? ` · <span class="badge b-yellow">dates moved ${up.shiftDays} days for testing</span>` : ''}</p>` : ''}
+    <form id="upload" class="mt" style="display:grid;gap:10px;max-width:640px">
+      <div class="row"><input type="file" name="file" accept=".csv,.ics,text/csv,text/calendar" style="flex:2;min-width:220px"><input name="season" value="${esc(up.season || st.seasonLabel)}" placeholder="Season" style="flex:1;min-width:120px"></div>
+      ${test ? `<label>Move dates forward by this many days (test copy only)<input name="shiftDays" type="number" value="${esc(up.shiftDays || 0)}" style="max-width:160px"><span class="small muted" style="font-weight:400">Use a multiple of 7 to keep games on the same weekday. 217 turns April 11, 2026 into Saturday, November 14.</span></label>` : ''}
+      <textarea name="text" placeholder="…or paste the file's contents here" style="min-height:70px"></textarea>
+      <div><button class="btn sm">Upload and sync</button></div>
+    </form>
+    ${test ? `<div class="note warn mt"><b>Test copy.</b> Start over with a clean slate: <button class="link" id="t-reset">clear all practice games, people and messages</button> (admins and settings stay).</div>` : ''}
+    <h3>Calendar feed links (optional)</h3>
+    <p class="small muted">If a team or league calendar in SportsEngine offers Subscribe, paste its iCal link here.</p>
     <form id="feeds" style="display:grid;gap:8px" class="mt">
-      ${st.feeds.concat([{ url: '', season: st.seasonLabel }]).map((f, i) => `<div class="row"><input name="url${i}" value="${esc(f.url)}" placeholder="webcal://… or https://…ics" style="flex:3;min-width:220px"><input name="season${i}" value="${esc(f.season)}" placeholder="Season" style="flex:1;min-width:120px"></div>`).join('')}
+      ${linkFeeds.concat([{ url: '', season: st.seasonLabel }]).map((f, i) => `<div class="row"><input name="url${i}" value="${esc(f.url)}" placeholder="webcal://… or https://…ics" style="flex:3;min-width:220px"><input name="season${i}" value="${esc(f.season)}" placeholder="Season" style="flex:1;min-width:120px"></div>`).join('')}
       <div><button class="btn ghost sm">Save feeds</button></div>
     </form>
     ${last ? `<h3>Last sync · ${fmtStamp(last.at)} <span class="small muted">by ${esc(last.by)}</span></h3>
@@ -733,11 +756,31 @@ async function viewSync(main) {
     ${log.changes.length ? `<div class="tbl-wrap"><table><tr><th>When</th><th>Change</th><th>Game</th><th>Before → after</th></tr>${log.changes.slice(0, 200).map(c => `<tr><td class="small">${fmtStamp(c.at)}</td><td><span class="badge ${changeBadge[c.change] || 'b-gray'}">${esc(c.change)}</span></td><td class="small">${esc(c.summary)}<div class="muted">${c.start ? fmtWhen(c.start) : ''}</div></td>
       <td class="small">${c.before ? `${fmtWhen(c.before.start)} · ${esc(c.before.field || '')}<br>→ ${fmtWhen(c.after.start)} · ${esc(c.after.field || '')}` : ''}</td></tr>`).join('')}</table></div>` : '<p class="muted small">Nothing yet.</p>'}`;
   $('#s-now').onclick = async e => { e.target.disabled = true; e.target.textContent = 'Syncing…'; try { toast(syncMsg(await api('POST', '/api/admin/sync'))); } catch (err) { toast(err.message, true); } viewSync(main); };
+  $('#upload').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target;
+    const file = f.querySelector('[name=file]').files[0];
+    const text = file ? await file.text() : f.querySelector('[name=text]').value;
+    if (!text.trim()) return toast('Choose the exported file first.', true);
+    const btn = f.querySelector('.btn'); btn.disabled = true; btn.textContent = 'Uploading…';
+    try {
+      const r = await api('POST', '/api/admin/schedule-upload', { text, filename: file?.name || 'pasted schedule', season: f.season.value, shiftDays: f.shiftDays ? Number(f.shiftDays.value) : 0 });
+      toast(syncMsg(r));
+    } catch (err) { toast(err.message, true); }
+    viewSync(main);
+  };
+  const reset = $('#t-reset');
+  if (reset) reset.onclick = async () => {
+    if (!(await confirmBox('Clear the test copy?', 'This deletes every practice game, umpire, coach, rating, payout and message on the test copy. Admin accounts and settings stay. The real app is not touched.', 'Clear test data', true))) return;
+    try { await api('POST', '/api/admin/test/reset', {}); toast('Test copy cleared.'); } catch (err) { toast(err.message, true); }
+    viewSync(main);
+  };
   $('#feeds').onsubmit = async e => {
     e.preventDefault();
     const v = Object.fromEntries(new FormData(e.target));
     const feeds = [];
     for (let i = 0; `url${i}` in v; i++) if (v[`url${i}`].trim()) feeds.push({ url: v[`url${i}`].trim(), season: v[`season${i}`].trim() || st.seasonLabel });
+    feeds.push(...st.feeds.filter(f => f.url.startsWith('upload:')));
     try { await api('PUT', '/api/admin/settings', { feeds }); toast('Feeds saved. Tap Sync now to pull games.'); viewSync(main); } catch (err) { toast(err.message, true); }
   };
 }

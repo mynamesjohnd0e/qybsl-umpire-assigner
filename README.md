@@ -96,7 +96,7 @@ Then tick "Send texts" in Settings. Until then everything still goes by email, a
 
 1. Open the app, tap **First time? Sign up**, choose **Board admin**, and set your PIN.
 2. **Settings**: season name, Director of Umpires email, other admins, pay rate, first payout Monday.
-3. **Schedule sync**: paste the SportsEngine iCal link (Calendar → Subscribe), then **Sync now**.
+3. **Schedule sync**: upload the game schedule exported from SportsEngine HQ (CSV). Upload a fresh export whenever games change; moved and cancelled games are handled automatically. A calendar feed link works too if a team calendar offers one.
 4. Check the sync result. If it says some events "didn't match a division", either add that team's coach on the People page or adjust the sorting rules (Settings → Advanced).
 5. **People → Upload lists**: the umpire list and the head coach list.
 6. Send umpires and coaches the link. Umpires on the list are approved as soon as they sign up; coaches on the list are linked to their team.
@@ -117,6 +117,10 @@ The feed's game titles are matched against rules in Settings (first match wins):
 - Minors, Majors, Babe Ruth, summer 10 and up → **patched** (assignor, manual status)
 
 If a title has no division in it, the app looks up the team name in the coach list.
+
+## Test copy
+
+Every deploy also updates a test copy (`qybsl-umpire-assigner-test`) with its own database (`umpires-test`). It shows a TEST COPY banner, only ever emails John's own addresses (`higgins.qyb+anything@gmail.com`), can move uploaded dates forward (Schedule sync → "Move dates forward"), and has a button to clear all practice data.
 
 ## Things to check against the real feed
 
