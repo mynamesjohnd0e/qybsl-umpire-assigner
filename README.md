@@ -14,6 +14,8 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `lib/teams.js` | Teams and divisions as records; matching schedule team names to them |
 | `lib/roster.js` | Player roster upload: birthdate → league age (Apr 30 cutoff), birthdate discarded |
 | `lib/scores.js` | Scores: home enters, away confirms/disputes, 24h auto-confirm, director settles/approves/forfeits, "enter in SE" list |
+| `lib/standings.js` | Standings: win % (tie = half win), tiebreakers (head-to-head → runs allowed → coin toss) |
+| `lib/brackets.js` | Seeding and playoff brackets (single elimination, plus Majors 6-team double elimination) |
 | `lib/coach.js` | Coach confirmations and ratings |
 | `lib/payouts.js` | Biweekly payout report |
 | `lib/jobs.js` | Sunday digest, day-before reminders, 72-hour gap alerts, reconfirm deadlines, coach nudges |

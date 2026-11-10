@@ -14,7 +14,9 @@
     "lib/clock.js",
     "lib/roster.js",
     "lib/teams.js",
-    "lib/scores.js"
+    "lib/scores.js",
+    "lib/standings.js",
+    "lib/brackets.js"
   ],
   "thresholds": { "high": 90, "low": 85, "break": 85 },
   "concurrency": 4,
