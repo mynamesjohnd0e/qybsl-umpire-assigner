@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 8 (Mar 1–21, 2027) – Practice season: a season simulator replays 2026 day by day on the moving clock (scores, umpires, disputes, no-shows, a rainout), with end-of-season acceptance checks; the board plays the same season live on the test copy.** See `docs/SPRINTS.md`. (Sprints 0–7 are merged.)
+**Current sprint: Sprint 9 (Mar 22–Apr 9, 2027) – Go-live: upload preview (see a schedule upload's changes before saving), backup + restore (record-for-record, restore test-copy only), a post-deploy self-check, and the Firestore-backup / Cloud-Run-rollback runbook. Then load 2027 and show coaches the app.** See `docs/SPRINTS.md`. (Sprints 0–8 are merged.)
 
 ## Stack and conventions
 
