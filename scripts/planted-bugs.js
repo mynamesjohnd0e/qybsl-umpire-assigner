@@ -265,6 +265,14 @@ const BUGS = [
     find: 'if (!closure.all) return 0;',
     replace: 'if (true) return 0;',
     tests: ['test/api/snackshack.test.js']
+  },
+  // Sprint 8: the season-replay acceptance suite catches a broad regression.
+  {
+    name: 'auto-confirmed scores are left pending (not final)',
+    file: 'lib/scores.js',
+    find: "c.status = 'final'; c.confirmedHow = 'auto';",
+    replace: "c.status = 'entered'; c.confirmedHow = 'auto';",
+    tests: ['test/api/scores.test.js', 'test/api/season.test.js']
   }
 ];
 

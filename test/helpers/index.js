@@ -53,6 +53,7 @@ const auth = () => require('../../lib/auth');
 const jobs = () => require('../../lib/jobs');
 const payouts = () => require('../../lib/payouts');
 const snackshack = () => require('../../lib/snackshack');
+const simulator = () => require('../../lib/simulator');
 
 async function startApp() {
   const app = require('../../server');
@@ -112,7 +113,7 @@ async function outbox() {
 
 module.exports = {
   setupEnv, tmp, startApp, makeClient, reset, outbox,
-  clock, store, settings, auth, jobs, payouts, snackshack,
+  clock, store, settings, auth, jobs, payouts, snackshack, simulator,
   ...require('./feeds'),
   world: (...a) => require('./world').buildWorld(...a)
 };

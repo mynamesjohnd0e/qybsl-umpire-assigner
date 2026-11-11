@@ -27,7 +27,8 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `lib/people.js`, `lib/auth.js` | Email + PIN sign-in, umpire and coach lists |
 | `lib/clock.js` | The one clock. Every "now" in the code comes from here so tests can travel in time |
 | `public/` | The web pages |
-| `test/unit/`, `test/api/`, `test/integration/` | The test suite (`npm test`); helpers in `test/helpers/` |
+| `lib/simulator.js` | Season simulator: replays the 2026 schedule day by day on the clock for the practice-season acceptance tests |
+| `test/unit/`, `test/api/`, `test/integration/` | The test suite (`npm test`); helpers in `test/helpers/`; the season replay is `test/api/season.test.js` |
 | `scripts/planted-bugs.js` | Breaks each rule in turn and checks a test goes red (`npm run planted-bugs`) |
 | `scripts/demo-seed.js` | Fills a local copy with fake umpires, coaches and games |
 
