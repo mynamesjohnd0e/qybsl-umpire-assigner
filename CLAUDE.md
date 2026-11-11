@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 6 (Feb 8–21, 2027) – Rainouts and field closures: close a field / several / all of Quarry Hills for a day or window, affected games rained out (no score/pitch/pay/standings), notices to coaches + umpires + parents + one Communications Director note, makeups paired to originals, reopening restores.** See `docs/SPRINTS.md`. (Sprints 0–5 are merged. The "4 days rest" day is confirmed: eligible on the (N+1)th day.)
+**Current sprint: Sprint 7 (Feb 22–28, 2027) – Snack Shack sign-ups: shifts (copy last week), public no-account sign-up (counts only), atomic last spot, cancel links, day-before reminders, weekly unfilled email to the director, full closure cancels shifts.** See `docs/SPRINTS.md`. (Sprints 0–6 are merged.)
 
 ## Stack and conventions
 

@@ -10,6 +10,7 @@ const coach = require('./lib/coach');
 const scores = require('./lib/scores');
 const pitchlog = require('./lib/pitchlog');
 const closures = require('./lib/closures');
+const snackshack = require('./lib/snackshack');
 const { standings } = require('./lib/standings');
 const brackets = require('./lib/brackets');
 const payouts = require('./lib/payouts');
@@ -36,6 +37,11 @@ const h = fn => async (req, res) => {
 };
 
 app.get('/health', (_req, res) => res.send('ok'));
+
+// ── Snack Shack public sign-up (no account) ───────────────────────────────────
+app.get('/api/public/snack/shifts', h(async () => ({ shifts: await snackshack.publicShifts() })));
+app.post('/api/public/snack/signup', h(async req => snackshack.signUp(req.body || {})));
+app.post('/api/public/snack/cancel', h(async req => snackshack.cancel(req.body?.s || req.body?.signupId, req.body?.t || req.body?.token)));
 
 // ── Sign up / sign in ────────────────────────────────────────────────────────
 app.post('/api/auth/signup', h(async (req, res) => {
@@ -322,6 +328,7 @@ app.post('/api/admin/people', A, h(async req => {
   if (b.role === 'umpire') p.umpire = { onRoster: true, approved: true, active: true, plateQualified: !!b.plateQualified, parentName: b.parentName || '', parentEmail: auth.normEmail(b.parentEmail), parentMobile: b.parentMobile || '', venmo: b.venmo || '' };
   if (b.role === 'coach') p.coach = { onRoster: true, pending: false, teams: b.team ? [{ team: b.team, division: b.division || '' }] : [] };
   if (b.role === 'director') p.director = { divisions: cleanDivisions(b.divisions || (b.division ? [b.division] : [])) };
+  if (b.role === 'snack') p.snack = true;
   await store.set('people', email, p);
 }));
 
@@ -355,6 +362,7 @@ app.put('/api/admin/people/:email', A, h(async req => {
     const divisions = cleanDivisions(b.director?.divisions ?? b.director ?? []);
     p.director = divisions.length ? { divisions } : null;
   }
+  if (b.snack !== undefined) p.snack = !!b.snack;
   await store.set('people', email, p);
 }));
 
@@ -446,6 +454,12 @@ app.post('/api/admin/sync', A, h(async req => runSync({ by: req.user.email })));
 app.post('/api/admin/closures', A, h(async req => closures.closeFields(req.user, req.body || {})));
 app.post('/api/admin/closures/:id/reopen', A, h(async req => closures.reopen(req.user, req.params.id)));
 app.get('/api/admin/closures', A, h(async () => ({ closures: await closures.listClosures() })));
+
+// ── Snack Shack management (Snack Shack Director or admin) ─────────────────────
+const SM = auth.requireSnackManager;
+app.post('/api/admin/snack/shifts', SM, h(async req => snackshack.createShift(req.user, req.body || {})));
+app.post('/api/admin/snack/copy-week', SM, h(async req => snackshack.copyWeek(req.user, req.body?.fromMonday, req.body?.toMonday)));
+app.get('/api/admin/snack', SM, h(async () => ({ shifts: await snackshack.managerView() })));
 
 // Upload the schedule exported from SportsEngine HQ (CSV) or an .ics file.
 // Each upload replaces the last one and is synced right away; later uploads

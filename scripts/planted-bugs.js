@@ -236,6 +236,35 @@ const BUGS = [
     find: 'if (original) {',
     replace: 'if (false) {',
     tests: ['test/api/makeups.test.js']
+  },
+  // Sprint 7 rules.
+  {
+    name: 'a full Snack Shack shift still takes sign-ups',
+    file: 'lib/snackshack.js',
+    find: 'shift.filled >= shift.peopleNeeded',
+    replace: 'false',
+    tests: ['test/api/snackshack.test.js']
+  },
+  {
+    name: 'a Snack Shack cancel link is not checked',
+    file: 'lib/snackshack.js',
+    find: 'if (!signup || signup.token !== token)',
+    replace: 'if (!signup || false)',
+    tests: ['test/api/snackshack.test.js']
+  },
+  {
+    name: 'a Snack Shack reminder is sent on every run',
+    file: 'lib/snackshack.js',
+    find: '!su.cancelled && !su.reminded && openIds.has(su.shiftId)',
+    replace: '!su.cancelled && true && openIds.has(su.shiftId)',
+    tests: ['test/api/snackshack.test.js']
+  },
+  {
+    name: 'a full closure does not cancel Snack Shack shifts',
+    file: 'lib/snackshack.js',
+    find: 'if (!closure.all) return 0;',
+    replace: 'if (true) return 0;',
+    tests: ['test/api/snackshack.test.js']
   }
 ];
 

@@ -19,7 +19,8 @@
     "lib/sync.js",
     "lib/store.js",
     "lib/pitchlog.js",
-    "lib/closures.js"
+    "lib/closures.js",
+    "lib/snackshack.js"
   ],
   "thresholds": { "high": 85, "low": 70, "break": 70 },
   "concurrency": 4,
