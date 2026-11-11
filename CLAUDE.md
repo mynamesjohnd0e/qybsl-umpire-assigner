@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 7 (Feb 22–28, 2027) – Snack Shack sign-ups: shifts (copy last week), public no-account sign-up (counts only), atomic last spot, cancel links, day-before reminders, weekly unfilled email to the director, full closure cancels shifts.** See `docs/SPRINTS.md`. (Sprints 0–6 are merged.)
+**Current sprint: Sprint 8 (Mar 1–21, 2027) – Practice season: a season simulator replays 2026 day by day on the moving clock (scores, umpires, disputes, no-shows, a rainout), with end-of-season acceptance checks; the board plays the same season live on the test copy.** See `docs/SPRINTS.md`. (Sprints 0–7 are merged.)
 
 ## Stack and conventions
 
