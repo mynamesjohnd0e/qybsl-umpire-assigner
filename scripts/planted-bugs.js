@@ -207,6 +207,35 @@ const BUGS = [
     find: '!teams.includes(norm(player.team))',
     replace: 'false',
     tests: ['test/api/eligibility.test.js', 'test/api/pitching.test.js']
+  },
+  // Sprint 6 rules.
+  {
+    name: 'a rainout window catches a game ending exactly as it starts',
+    file: 'lib/closures.js',
+    find: 'return gs < ct && cf < ge;',
+    replace: 'return gs < ct && cf <= ge;',
+    tests: ['test/api/closures.test.js']
+  },
+  {
+    name: 'a rained-out game is still treated as live',
+    file: 'lib/games.js',
+    find: "const isLive = g => g.status !== 'cancelled' && g.status !== 'rainout';",
+    replace: "const isLive = g => g.status !== 'cancelled';",
+    tests: ['test/api/closures.test.js']
+  },
+  {
+    name: 're-closing re-notifies already rained-out games',
+    file: 'lib/closures.js',
+    find: "g.status === 'scheduled' && overlapsClosure(g, closure, s)",
+    replace: 'overlapsClosure(g, closure, s)',
+    tests: ['test/api/closures.test.js']
+  },
+  {
+    name: 'makeups are not paired to their original',
+    file: 'lib/sync.js',
+    find: 'if (original) {',
+    replace: 'if (false) {',
+    tests: ['test/api/makeups.test.js']
   }
 ];
 

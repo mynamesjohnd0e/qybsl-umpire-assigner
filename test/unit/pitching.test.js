@@ -86,10 +86,16 @@ test('a 66-pitch outing leaves the pitcher resting the next day, and never eligi
   assert.strictEqual(P.eligibility(outings, '2027-05-02', 11, L).available, false);
 });
 
-test('the exact day a "4 days rest" pitcher returns (PENDING Cal Ripken Director)', { todo: 'confirm the exact eligible day with the Cal Ripken Director' }, () => {
-  const sat = '2027-05-01';
-  // Provisional reading: 4 rest days + offset 1 → eligible the following Thursday.
-  assert.strictEqual(P.restingUntil([outing(sat, 66)], L), '2027-05-06');
+test('"4 days rest" means eligible on the 5th day (confirmed by John/Cal Ripken)', () => {
+  // John's ruling: a pitcher with 4 days of rest is eligible on the 5th day —
+  // pitch Monday, eligible Saturday.
+  const mon = '2027-05-03'; // a Monday
+  assert.strictEqual(P.restDays(66, L.pitchRestBrackets), 4);
+  assert.strictEqual(P.restingUntil([outing(mon, 66)], L), '2027-05-08', 'eligible the following Saturday');
+  assert.strictEqual(P.eligibility([outing(mon, 66)], '2027-05-07', 11, L).available, false, 'still resting Friday');
+  assert.strictEqual(P.eligibility([outing(mon, 66)], '2027-05-08', 11, L).available, true, 'eligible Saturday');
+  // And a Saturday outing is eligible the following Thursday.
+  assert.strictEqual(P.restingUntil([outing('2027-05-01', 66)], L), '2027-05-06');
 });
 
 // ── Innings stored as outs ────────────────────────────────────────────────────
