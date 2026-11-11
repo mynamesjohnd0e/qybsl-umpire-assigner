@@ -165,6 +165,16 @@ app.post('/api/coach/score/dispute', auth.requireCoach, h(async req => scores.sc
 // ── Pitch counts ──────────────────────────────────────────────────────────────
 app.post('/api/coach/pitches', auth.requireCoach, h(async req => pitchlog.logPitches(req.user, req.body || {})));
 app.get('/api/pitching/eligibility', auth.requireUser, h(async req => pitchlog.playerEligibility(req.query.playerId, req.query.date)));
+// Pre-game eligibility for both teams: the two teams' coaches, the division
+// director and the board can see it (opponents included).
+app.get('/api/games/:id/eligibility', auth.requireUser, h(async req => {
+  const g = await store.get('games', req.params.id);
+  if (!g) throw new Error('Game not found.');
+  if (!(req.user.isAdmin || auth.managesDivision(req.user, g.division) || coach.coachOwns(req.user, g))) {
+    const e = new Error('Only the two teams\' coaches and the division director can see this.'); e.status = 403; throw e;
+  }
+  return pitchlog.gameEligibility(g);
+}));
 
 // ── Standings (coaches, directors and the board see them in the app) ──────────
 app.get('/api/standings', auth.requireUser, h(async () => {
@@ -424,6 +434,8 @@ app.get('/api/admin/enter-se', DA, h(async req => ({ list: await scores.enterSEL
 // Pitch counts: a director/admin can log for a coach, and view a game's log.
 app.post('/api/admin/games/:id/pitches', DA, h(async req => { await managedGame(req); return pitchlog.logPitches(req.user, { ...req.body, gameId: req.params.id }, { asDirector: true }); }));
 app.get('/api/admin/games/:id/pitchlog', DA, h(async req => { await managedGame(req); return { log: await pitchlog.gameLog(req.params.id) }; }));
+// The director dashboard: active pitch-count problems in their division(s).
+app.get('/api/admin/pitching/violations', DA, h(async req => ({ violations: await pitchlog.violationsFor(req.user) })));
 
 app.post('/api/admin/sync', A, h(async req => runSync({ by: req.user.email })));
 
