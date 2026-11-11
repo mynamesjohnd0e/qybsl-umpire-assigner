@@ -28,6 +28,7 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `lib/clock.js` | The one clock. Every "now" in the code comes from here so tests can travel in time |
 | `public/` | The web pages |
 | `lib/simulator.js` | Season simulator: replays the 2026 schedule day by day on the clock for the practice-season acceptance tests |
+| `lib/backup.js` | Whole-league backup/restore (record-for-record; restore is test-copy only) and the post-deploy self-check |
 | `test/unit/`, `test/api/`, `test/integration/` | The test suite (`npm test`); helpers in `test/helpers/`; the season replay is `test/api/season.test.js` |
 | `scripts/planted-bugs.js` | Breaks each rule in turn and checks a test goes red (`npm run planted-bugs`) |
 | `scripts/demo-seed.js` | Fills a local copy with fake umpires, coaches and games |
@@ -163,3 +164,42 @@ Every deploy also updates a test copy (`qybsl-umpire-assigner-test`) with its ow
 ## Things to check against the real feed
 
 The spec flagged this as a pre-build check, and it still applies: export the actual SportsEngine feed and run a sync before opening sign-ups. Confirm game titles include the division (or the coach list covers every team name) and that field names come through in the location.
+
+## Go-live: preview, backup and rollback
+
+Three safety nets for launch and for every day after.
+
+**Preview a schedule upload before you run it.** On Schedule sync, **Preview** runs the whole reconciliation against the new export and shows exactly what the real upload would do — new games, moved games, cancelled games, and any team name it can't place — without saving anything or messaging anyone. Fix any surprise (usually a misspelled team: add or correct the coach on the People page), preview again, then upload for real. The upload produces the same result the preview showed.
+
+**Nightly backup (automatic, by Google).** Firestore is backed up to a Cloud Storage bucket every night by a scheduled export; nothing to do by hand. To take one on demand, or before a risky change:
+
+```bash
+gcloud firestore export gs://qybsl-scheduler-backups/$(date +%Y-%m-%d) \
+  --project qybsl-scheduler --database umpires
+```
+
+To restore a production backup (rare — only after real data loss), import it back into the database:
+
+```bash
+gcloud firestore import gs://qybsl-scheduler-backups/2027-04-05 \
+  --project qybsl-scheduler --database umpires
+```
+
+The app also has an in-app backup (**Admin → Backup**, `GET /api/admin/backup`) that downloads the whole league as one file. Restoring that file (`POST /api/admin/restore`) is **only allowed on the test copy** — it's how a restore is rehearsed before the season — so a mis-click can never overwrite the live app. Rehearse it once before go-live: back up the test copy, clear it, restore the file, and confirm the league comes back.
+
+**Roll back a bad deploy.** Every push to `main` deploys a new Cloud Run revision. If one misbehaves, send all traffic back to the previous revision — the app is live again in seconds, no rebuild:
+
+```bash
+# See the recent revisions (newest first)
+gcloud run revisions list --service qybsl-umpire-assigner \
+  --region us-east1 --project qybsl-scheduler
+
+# Point 100% of traffic at the known-good revision
+gcloud run services update-traffic qybsl-umpire-assigner \
+  --region us-east1 --project qybsl-scheduler \
+  --to-revisions qybsl-umpire-assigner-00042-abc=100
+```
+
+Then fix forward: open a branch, land the fix, and let the next push to `main` deploy it. Practise this rollback once before the season so it's familiar under pressure.
+
+**After any deploy, run the self-check.** **Admin → Self-check** (`GET /api/admin/selfcheck`) confirms in one page that the settings are loaded, a board admin and a schedule feed are configured, when sync and the timed jobs last ran, and how many games are loaded. If it doesn't read **ok**, something in setup is missing — fix it before opening sign-ups.

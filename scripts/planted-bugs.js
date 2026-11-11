@@ -273,6 +273,28 @@ const BUGS = [
     find: "c.status = 'final'; c.confirmedHow = 'auto';",
     replace: "c.status = 'entered'; c.confirmedHow = 'auto';",
     tests: ['test/api/scores.test.js', 'test/api/season.test.js']
+  },
+  // Sprint 9: go-live safety (preview truth, self-check, restore fidelity).
+  {
+    name: 'an upload preview is not a dry run — it saves',
+    file: 'lib/sync.js',
+    find: 'if (opts.preview) return summary;',
+    replace: 'if (false) return summary;',
+    tests: ['test/api/golive.test.js']
+  },
+  {
+    name: 'the self-check reads ok even with no admin configured',
+    file: 'lib/backup.js',
+    find: 'checks.ok = checks.settingsLoaded && checks.adminConfigured;',
+    replace: 'checks.ok = checks.settingsLoaded;',
+    tests: ['test/api/golive.test.js']
+  },
+  {
+    name: 'restore writes blank records instead of the backed-up ones',
+    file: 'lib/backup.js',
+    find: 'await store.set(c, id, doc); n++;',
+    replace: 'await store.set(c, id, {}); n++;',
+    tests: ['test/api/golive.test.js']
   }
 ];
 

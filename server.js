@@ -11,6 +11,7 @@ const scores = require('./lib/scores');
 const pitchlog = require('./lib/pitchlog');
 const closures = require('./lib/closures');
 const snackshack = require('./lib/snackshack');
+const backup = require('./lib/backup');
 const { standings } = require('./lib/standings');
 const brackets = require('./lib/brackets');
 const payouts = require('./lib/payouts');
@@ -479,10 +480,33 @@ app.post('/api/admin/schedule-upload', A, h(async req => {
   return runSync({ by: req.user.email });
 }));
 
+// Preview an upload: run the whole reconciliation against the new file and show
+// what would change (new / moved / cancelled, unmatched teams) without saving or
+// messaging anyone. The real upload above then produces the same result.
+app.post('/api/admin/schedule-upload/preview', A, h(async req => {
+  const b = req.body || {};
+  const text = String(b.text || '');
+  if (text.length < 20) throw new Error('That file looks empty.');
+  const { looksLikeSeCsv } = require('./lib/secsv');
+  if (!looksLikeSeCsv(text) && !text.includes('BEGIN:VCALENDAR')) throw new Error('This doesn\'t look like a SportsEngine schedule export (CSV) or a calendar (.ics) file.');
+  const shiftDays = TEST_MODE ? Math.round(Number(b.shiftDays) || 0) : 0;
+  const s = await getSettings();
+  const season = String(b.season || s.seasonLabel).trim();
+  return runSync({ by: req.user.email, preview: true, feeds: [{ url: 'upload:main', text, season, shiftDays }] });
+}));
+
 app.get('/api/admin/schedule-upload', A, h(async () => {
   const d = await store.get('uploads', 'main');
   return d ? { filename: d.filename, uploadedAt: d.uploadedAt, by: d.by, season: d.season, shiftDays: d.shiftDays, size: d.text.length } : {};
 }));
+
+// ── Backup, restore and the post-deploy self-check ────────────────────────────
+app.get('/api/admin/backup', A, h(async () => backup.exportAll()));
+app.post('/api/admin/restore', A, h(async req => {
+  if (!TEST_MODE) throw new Error('Restore is only available on the test copy.');
+  return backup.importAll(req.body || {});
+}));
+app.get('/api/admin/selfcheck', A, h(async () => backup.selfCheck()));
 
 // Test copy only: wipe practice data and start over.
 app.post('/api/admin/test/reset', A, h(async req => {
