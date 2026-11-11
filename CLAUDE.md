@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 4 (Jan 11–24, 2027) – Pitch logging and the rules engine: per-game pitch counts (innings as outs for 12-year-olds), a pure eligibility engine (available / resting until / pitches left), finish-the-batter tolerance, two games a day, limits from Settings.** See `docs/SPRINTS.md`. (Sprints 0–3 are merged. Open: the exact "4 days rest" eligible day awaits the Cal Ripken Director — left as a `todo` test.)
+**Current sprint: Sprint 5 (Jan 25–Feb 7, 2027) – Eligibility and alerts: pre-game eligibility for both teams, warnings while logging, violation emails to the Cal Ripken Director, the director dashboard, the 12-year-old weekly innings cap, 24h log nudges, pitch history into playoffs.** See `docs/SPRINTS.md`. (Sprints 0–4 are merged. Open: the exact "4 days rest" eligible day still awaits the Cal Ripken Director — a `todo` test.)
 
 ## Stack and conventions
 

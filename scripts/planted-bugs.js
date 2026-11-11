@@ -178,6 +178,35 @@ const BUGS = [
     find: 'if (r > 0) {',
     replace: 'if (false) {',
     tests: ['test/unit/pitching.test.js', 'test/api/pitching.test.js']
+  },
+  // Sprint 5 rules.
+  {
+    name: 'the 12-year-old weekly cap never reads as over',
+    file: 'lib/pitching.js',
+    find: 'over: outs > capOuts,',
+    replace: 'over: false,',
+    tests: ['test/unit/pitching.test.js', 'test/api/eligibility.test.js']
+  },
+  {
+    name: 'a violation alert is sent on every edit, not once per problem',
+    file: 'lib/pitchlog.js',
+    find: 'if (active && !existing) {',
+    replace: 'if (active) {',
+    tests: ['test/api/eligibility.test.js']
+  },
+  {
+    name: 'a corrected violation never clears',
+    file: 'lib/pitchlog.js',
+    find: '} else if (!active && existing) {',
+    replace: '} else if (false) {',
+    tests: ['test/api/eligibility.test.js']
+  },
+  {
+    name: 'the opposing coach can change another team\'s logs',
+    file: 'lib/pitchlog.js',
+    find: '!teams.includes(norm(player.team))',
+    replace: 'false',
+    tests: ['test/api/eligibility.test.js', 'test/api/pitching.test.js']
   }
 ];
 

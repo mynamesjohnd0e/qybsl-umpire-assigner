@@ -101,6 +101,41 @@ test('innings are stored and read back as outs (thirds)', () => {
   assert.strictEqual(P.outsToInnings(5), '1⅔');
 });
 
+// ── 12-year-old weekly innings cap (Mon–Sun) ──────────────────────────────────
+test('the 12-year-old weekly cap: 3+4+4 innings nears it, 2 more on Saturday goes over', () => {
+  // One Mon–Sun week (starts Mon Apr 26 2027).
+  const week = [
+    { date: '2027-04-27', outs: 9 },  // 3 innings
+    { date: '2027-04-29', outs: 12 }, // 4 innings
+    { date: '2027-04-30', outs: 12 }  // 4 innings  → 11 innings, 33 outs
+  ];
+  const wk = P.weekKeyOf('2027-04-27');
+  const before = P.twelveCapStatus(P.sumOutsInWeek(week, wk), L.twelveInningWeeklyOuts, L.twelveInningNearOuts);
+  assert.strictEqual(before.outs, 33);
+  assert.strictEqual(before.near, true, 'nearing the cap after 11 innings');
+  assert.strictEqual(before.over, false);
+
+  const sat = [...week, { date: '2027-05-01', outs: 6 }]; // +2 innings on Saturday → 13 innings
+  const after = P.twelveCapStatus(P.sumOutsInWeek(sat, wk), L.twelveInningWeeklyOuts, L.twelveInningNearOuts);
+  assert.strictEqual(after.over, true, '13 innings is over the 12-inning cap');
+});
+
+test('the weekly cap resets Monday: the same 2 innings the next week are fine', () => {
+  const nextMon = [{ date: '2027-05-03', outs: 6 }]; // Monday, 2 innings, new week
+  const wk = P.weekKeyOf('2027-05-03');
+  assert.notStrictEqual(wk, P.weekKeyOf('2027-05-01'), 'Saturday and the next Monday are different weeks');
+  const s = P.twelveCapStatus(P.sumOutsInWeek(nextMon, wk), L.twelveInningWeeklyOuts, L.twelveInningNearOuts);
+  assert.strictEqual(s.over, false);
+  assert.strictEqual(s.near, false, 'a fresh week, well under the cap');
+});
+
+test('thirds add up exactly and 36 outs is 12 innings', () => {
+  assert.strictEqual(P.inningsToOuts(1, 1) + P.inningsToOuts(1, 2), 9, '1⅓ + 1⅔ = 3 innings');
+  assert.strictEqual(P.outsToInnings(36), '12');
+  assert.strictEqual(P.twelveCapStatus(36, L.twelveInningWeeklyOuts, L.twelveInningNearOuts).over, false, 'exactly 12 innings is not over');
+  assert.strictEqual(P.twelveCapStatus(37, L.twelveInningWeeklyOuts, L.twelveInningNearOuts).over, true, 'one out past is over');
+});
+
 // ── Invariants ────────────────────────────────────────────────────────────────
 test('property: more pitches never means fewer rest days', () => {
   fc.assert(fc.property(fc.nat({ max: 150 }), fc.nat({ max: 150 }), (a, b) => {
