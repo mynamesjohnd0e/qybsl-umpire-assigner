@@ -52,6 +52,7 @@ const settings = () => require('../../lib/settings');
 const auth = () => require('../../lib/auth');
 const jobs = () => require('../../lib/jobs');
 const payouts = () => require('../../lib/payouts');
+const snackshack = () => require('../../lib/snackshack');
 
 async function startApp() {
   const app = require('../../server');
@@ -111,7 +112,7 @@ async function outbox() {
 
 module.exports = {
   setupEnv, tmp, startApp, makeClient, reset, outbox,
-  clock, store, settings, auth, jobs, payouts,
+  clock, store, settings, auth, jobs, payouts, snackshack,
   ...require('./feeds'),
   world: (...a) => require('./world').buildWorld(...a)
 };
