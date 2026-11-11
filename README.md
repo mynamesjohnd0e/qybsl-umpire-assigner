@@ -18,6 +18,7 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `lib/brackets.js` | Seeding and playoff brackets (single elimination, plus Majors 6-team double elimination) |
 | `lib/pitching.js` | Pitch-count rules engine: rest days, daily max, eligibility, finish-the-batter (all limits from Settings) |
 | `lib/pitchlog.js` | Pitch logging per game, pre-game eligibility for both teams, violation alerts to the Cal Ripken Director, the weekly 12-year-old cap |
+| `lib/closures.js` | Field closures and rainouts: affected games, notices, reopen (makeups pair on the next upload via `lib/sync.js`) |
 | `lib/coach.js` | Coach confirmations and ratings |
 | `lib/payouts.js` | Biweekly payout report |
 | `lib/jobs.js` | Sunday digest, day-before reminders, 72-hour gap alerts, reconfirm deadlines, coach nudges |

@@ -9,6 +9,7 @@ const G = require('./lib/games');
 const coach = require('./lib/coach');
 const scores = require('./lib/scores');
 const pitchlog = require('./lib/pitchlog');
+const closures = require('./lib/closures');
 const { standings } = require('./lib/standings');
 const brackets = require('./lib/brackets');
 const payouts = require('./lib/payouts');
@@ -258,6 +259,7 @@ app.get('/api/admin/overview', DA, h(async req => {
   const view = games.sort((a, b) => a.start.localeCompare(b.start)).map(g => {
     let coverage;
     if (g.status === 'cancelled') coverage = 'Cancelled';
+    else if (g.status === 'rainout') coverage = 'Rained out';
     else if (g.track === 'patched') coverage = g.patchedStatus;
     else if (G.SLOTS.some(k => g.slots[k].state === 'reconfirm')) coverage = 'Needs reconfirm';
     else coverage = G.SLOTS.every(k => g.slots[k].umpireId) ? 'Covered' : 'Open';
@@ -265,6 +267,7 @@ app.get('/api/admin/overview', DA, h(async req => {
       id: g.id, track: g.track, division: g.division, season: g.season, home: g.home, away: g.away, summary: g.summary,
       field: g.field, start: g.start, end: g.end, status: g.status, week: weekKey(g.start), coverage,
       movedAt: g.movedAt, cancelReason: g.cancelReason, source: g.source,
+      makeupOf: g.makeupOf || null, madeUpBy: g.madeUpBy || null, rainout: g.rainout || null,
       patchedStatus: g.patchedStatus, patchedNote: g.patchedNote, patchedMoved: !!g.patchedMoved,
       past: new Date(g.start) <= now,
       score: scores.scoreView(g),
@@ -438,6 +441,11 @@ app.get('/api/admin/games/:id/pitchlog', DA, h(async req => { await managedGame(
 app.get('/api/admin/pitching/violations', DA, h(async req => ({ violations: await pitchlog.violationsFor(req.user) })));
 
 app.post('/api/admin/sync', A, h(async req => runSync({ by: req.user.email })));
+
+// ── Field closures and rainouts (board admins only) ───────────────────────────
+app.post('/api/admin/closures', A, h(async req => closures.closeFields(req.user, req.body || {})));
+app.post('/api/admin/closures/:id/reopen', A, h(async req => closures.reopen(req.user, req.params.id)));
+app.get('/api/admin/closures', A, h(async () => ({ closures: await closures.listClosures() })));
 
 // Upload the schedule exported from SportsEngine HQ (CSV) or an .ics file.
 // Each upload replaces the last one and is synced right away; later uploads

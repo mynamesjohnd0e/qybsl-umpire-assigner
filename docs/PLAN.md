@@ -74,7 +74,7 @@ Limits (2026 Cal Ripken Majors and Minors rulebooks, identical):
 - A pitcher may pitch two games in a day while under the daily max. Pitches in suspended games count.
 - 12-year-old weekly cap: all 12-year-olds on a team combined may pitch at most 12 innings per Mon–Sun week; warn coach and Cal Ripken Director as it nears 12. Store innings as outs.
 - Limits live in Settings so the Cal Ripken Director can change them without code changes.
-- Open: confirm with the Cal Ripken Director exactly which day "4 days rest" makes a pitcher eligible.
+- Confirmed (John): "N days rest" means eligible on the (N+1)th day — a pitcher with 4 days rest who throws Monday is eligible Saturday. (`restEligibleOffset` = 1 in Settings.)
 
 ## Rainouts and field closures
 

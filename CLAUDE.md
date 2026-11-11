@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 5 (Jan 25–Feb 7, 2027) – Eligibility and alerts: pre-game eligibility for both teams, warnings while logging, violation emails to the Cal Ripken Director, the director dashboard, the 12-year-old weekly innings cap, 24h log nudges, pitch history into playoffs.** See `docs/SPRINTS.md`. (Sprints 0–4 are merged. Open: the exact "4 days rest" eligible day still awaits the Cal Ripken Director — a `todo` test.)
+**Current sprint: Sprint 6 (Feb 8–21, 2027) – Rainouts and field closures: close a field / several / all of Quarry Hills for a day or window, affected games rained out (no score/pitch/pay/standings), notices to coaches + umpires + parents + one Communications Director note, makeups paired to originals, reopening restores.** See `docs/SPRINTS.md`. (Sprints 0–5 are merged. The "4 days rest" day is confirmed: eligible on the (N+1)th day.)
 
 ## Stack and conventions
 
@@ -78,7 +78,7 @@ The full definition of done is at the end of `docs/SPRINTS.md`. A sprint is not 
 - Pitch limits (Cal Ripken Minors and Majors 2026 rulebooks): league age 9–10 max 75/day, 11–12 max 85/day. Rest: 1–20 pitches 0 days, 21–35 one, 36–50 two, 51–65 three, 66+ four. A pitcher at the max may finish the current batter. Pitches in suspended games count. Limits live in Settings, not code.
 - 12-year-olds: all 12-year-olds on a team combined may pitch at most 12 innings per Mon–Sun week. Store innings as outs.
 - League age = age on April 30 of the season year, from the roster birthdate. Keep the league age, discard the birthdate.
-- Open question for the Cal Ripken Director: exactly which day a pitcher with "4 days rest" is next eligible. Don't lock that test until John confirms.
+- "N days rest" means eligible on the (N+1)th day (confirmed by John): a pitcher with 4 days rest who throws Monday is eligible Saturday. In Settings as `restEligibleOffset` (1).
 - Standings: winning percentage, tie = half a win. Tiebreakers: head-to-head, fewest runs allowed (full season), coin toss recorded by the division director. Forfeit = 6–0.
 - Playoffs: Majors 6-team double elimination; Minors 5-team single; Farm 8, Farm 9, Babe Ruth single. All teams qualify; higher seed is home.
 - Messaging: coaches, umpires and Snack Shack volunteers get email/text. Umpires' parents are copied on umpire messages (the one family exception). No other parent or family address is ever messaged; families hear through SportsEngine.
