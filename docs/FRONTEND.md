@@ -45,7 +45,10 @@ admin coverage, people, ratings, payouts, schedule sync, messages, settings, acc
 1. **Deliverable now:** this written requirements doc. No code yet.
 2. **Navigation:** a **bottom navigation bar** (app-like), replacing the top tab row as features grow.
 3. **Snack Shack public sign-up:** a **separate, no-login page** (e.g. `/volunteer`), its own simple look.
-4. **Scope:** plan **all roles**; phase the build if the dependencies make that sensible (see §9).
+4. **Scope:** plan **all roles**; phase the build in the order of §9 (approved Nov 12).
+5. **Home runs:** score entry **captures who hit the home runs** (hitter names per side), not just a count.
+6. **"Who can pitch":** the **pre-game eligibility snapshot only** — no season-long per-player pitch history
+   for coaches.
 
 ### Inherited, non-negotiable from `CLAUDE.md` (not re-decided)
 
@@ -145,7 +148,8 @@ Each screen lists **who** sees it, **what** they do, the **states/edges** that m
 ### 5.1 Scores  *(Sprint 2 server; no screen yet)*
 
 **Enter a score — home coach.** `POST /api/coach/score`
-- Two large number fields (home runs / away runs) + optional "Who hit home runs?" name chips per side.
+- Two large number fields (home team's runs / away team's runs) **plus** a "Who hit home runs?" name
+  entry per side — coaches record the home-run hitters' names, not just a count (confirmed by John).
 - Shows the **24-hour deadline** ("confirm by Tue 7:10 PM or it confirms on its own") and nightly-nudge note.
 - Edge: no score field on **cancelled / rained-out / not-yet-started** games — the Score section explains why.
 - After save: status badge flips to **"Waiting for away coach"**; away coach's Today gets a task.
@@ -210,6 +214,8 @@ Score **status badges** (reuse `.badge`): *Needs score* (yellow) · *Waiting for
   - **Resting until <date>** (yellow) — the exact day they're eligible again.
   - **At limit** (red).
 - A standalone **"Who can pitch"** quick view (behind More) for a coach checking before they set a lineup.
+  This is the **pre-game snapshot only** — availability, pitches left today, and resting-until date — **not**
+  a season-long pitch history (confirmed by John).
 - 12-year-old weekly cap surfaces here too (§5.6).
 - Both coaches and the director see it; it's **read-only** — it never lets you change the other team.
 
@@ -318,24 +324,25 @@ order end to end.
 
 ## 8. Open questions for John
 
+*Resolved Nov 12: coaches capture home-run hitters' names (§2.5, §5.1); "Who can pitch" is the pre-game
+snapshot only (§2.6, §5.5); phasing approved (§9).*
+
+Still open:
+
 1. **Icons for the bottom bar** — plain text labels only, or simple line icons too? (Text-only is faster
    to ship and very legible; icons feel more app-like.)
-2. **Home-run detail** — the server stores *who* hit home runs. Is capturing names worth the extra taps for
-   coaches, or should we keep just the score + a count? (Affects the score-entry screen's complexity.)
-3. **"Who can pitch" reach** — should coaches see a season-long pitch history per player, or only the
-   pre-game eligibility snapshot? (More history = more screen; snapshot may be enough day-to-day.)
-4. **Director vs. admin overlap** — some directors may also be board admins. Confirm the merged bottom bar
+2. **Director vs. admin overlap** — some directors may also be board admins. Confirm the merged bottom bar
    (admin bar wins, division scoping still applies) reads right to you.
-5. **Volunteer page address** — is `/volunteer` the link you'd text parents, or do you want something you
+3. **Volunteer page address** — is `/volunteer` the link you'd text parents, or do you want something you
    can brand/remember more easily?
-6. **Living copy** — do you want this mirrored into the plan Claude Doc (like `PLAN.md`/`SPRINTS.md`) so it
+4. **Living copy** — do you want this mirrored into the plan Claude Doc (like `PLAN.md`/`SPRINTS.md`) so it
    lives beside the rest?
 
 ---
 
-## 9. Recommended phasing (since you said "all, phase if sensible")
+## 9. Phasing — **approved by John, Nov 12**
 
-The server already supports everything, so the front end can follow the **same order a season actually
+The server already supports everything, so the front end follows the **same order a season actually
 runs** — the spine `SPRINTS.md` uses for the dress rehearsal. Each phase is shippable to the test copy and
 demoable on a phone. This is a *build* sequence; the requirements above are the whole target.
 
