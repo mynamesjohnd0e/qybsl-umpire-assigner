@@ -7,7 +7,7 @@ const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const SLOTS = ['plate', 'field'];
 const LABEL = { plate: 'Plate', field: 'Field' };
 
-const S = { me: null, info: {}, tab: null, activeRole: null, signup: false, role: 'umpire', cache: {}, filters: { umpire: { onlyMine: true, division: '' }, cov: { week: 'upcoming', division: '', track: '', status: '', q: '' } } };
+const S = { me: null, info: {}, tab: null, activeRole: null, game: null, gameFrom: null, signup: false, role: 'umpire', cache: {}, filters: { umpire: { onlyMine: true, division: '' }, cov: { week: 'upcoming', division: '', track: '', status: '', q: '' } } };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 async function api(method, url, body) {
@@ -101,9 +101,9 @@ function defaultRole(roles) {
 // behind "More". "Account" is always reachable from More.
 const ROLE_NAV = {
   umpire:   { bar: ['today', 'open', 'mine', 'pay'] },
-  coach:    { bar: ['today', 'coach'] },
-  director: { bar: ['today', 'cov'] },
-  admin:    { bar: ['today', 'cov', 'people'], more: ['ratings', 'payouts', 'sync', 'msgs', 'settings'] },
+  coach:    { bar: ['today', 'coach', 'scores'] },
+  director: { bar: ['today', 'cov', 'scores'], more: ['entersse'] },
+  admin:    { bar: ['today', 'cov', 'scores'], more: ['people', 'entersse', 'ratings', 'payouts', 'sync', 'msgs', 'settings'] },
   snack:    { bar: ['today'] },
   account:  { bar: ['today'] }
 };
@@ -129,7 +129,10 @@ const DEST = {
   sync:     { label: 'Schedule', icon: 'sync',      view: viewSync },
   msgs:     { label: 'Messages', icon: 'mail',      view: viewMessages },
   settings: { label: 'Settings', icon: 'gear',      view: viewSettings },
-  account:  { label: 'Account',  icon: 'user',      view: viewAccount }
+  account:  { label: 'Account',  icon: 'user',      view: viewAccount },
+  scores:   { label: 'Scores',   icon: 'score',     view: viewScores },
+  entersse: { label: 'Enter in SE', icon: 'send',   view: viewEnterSE },
+  game:     { label: 'Game',     icon: 'calendar',  view: viewGame }
 };
 
 const ICONS = {
@@ -144,6 +147,8 @@ const ICONS = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.4-2.3 1a8 8 0 0 0-1.7-1l-.4-2.6H9.9l-.4 2.6a8 8 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a8 8 0 0 0 1.7 1l.4 2.6h4.2l.4-2.6a8 8 0 0 0 1.7-1l2.3 1 2-3.4z"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  score: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M12 6v12"/>',
+  send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
   more: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>'
 };
 function icon(name) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ICONS.home}</svg>`; }
@@ -257,42 +262,245 @@ async function todayUmpire(body) {
   bindGo(body);
 }
 async function todayCoach(body) {
-  const d = await api('GET', '/api/coach/games');
+  const [d, sd] = await Promise.all([api('GET', '/api/coach/games'), api('GET', '/api/coach/scores')]);
   if (d.pending) { body.innerHTML = `<div class="note info">We're linking your account to your team. An admin will confirm you shortly.</div>`; return; }
   const now = Date.now();
   const toConfirm = d.games.filter(g => new Date(g.start) <= now && SLOTS.some(k => g.slots[k].umpire && !g.slots[k].worked)).length;
+  const scoreTasks = (sd.games || []).filter(coachNeeds).length;
   const upcoming = d.games.filter(g => new Date(g.start) > now).length;
   body.innerHTML = tileGrid([
+    tile(scoreTasks, 'Scores to enter or confirm', 'scores', scoreTasks ? 'bad' : ''),
     tile(toConfirm, 'Umpires to confirm worked', 'coach', toConfirm ? 'bad' : ''),
     tile(upcoming, 'Upcoming games', 'coach')
   ]);
   bindGo(body);
-  soonNote(body, 'Entering scores and logging pitchers arrive in the next updates.');
+  soonNote(body, 'Logging pitchers and pre-game eligibility arrive in the next update.');
 }
 async function todayDirector(body) {
   const d = await api('GET', '/api/admin/overview');
   const c = d.counts || {};
+  const scoreNeeds = (d.games || []).filter(manageNeeds).length;
   body.innerHTML = tileGrid([
+    tile(scoreNeeds, 'Scores needing you', 'scores', scoreNeeds ? 'bad' : ''),
     tile(c.open || 0, 'Games still needing umpires', 'cov'),
     tile(c.unconfirmed || 0, 'Past games, umpires unconfirmed', 'cov')
   ]);
   bindGo(body);
-  soonNote(body, 'Score disputes, pitch violations and standings tools arrive in the next updates.');
+  soonNote(body, 'Pitch violations and standings tools arrive in the next updates.');
 }
 async function todayAdmin(body) {
   const d = await api('GET', '/api/admin/overview');
   const c = d.counts || {};
   const pending = (c.approvals || 0) + (c.coaches || 0);
+  const scoreNeeds = (d.games || []).filter(manageNeeds).length;
   body.innerHTML = tileGrid([
+    tile(scoreNeeds, 'Scores needing you', 'scores', scoreNeeds ? 'bad' : ''),
     tile(c.open || 0, 'Games needing umpires', 'cov'),
-    tile(pending, 'People awaiting approval', 'people', pending ? 'bad' : ''),
-    tile(c.unconfirmed || 0, 'Past games unconfirmed', 'cov')
+    tile(pending, 'People awaiting approval', 'people', pending ? 'bad' : '')
   ]);
   bindGo(body);
-  soonNote(body, `Last schedule sync: ${d.lastRun ? fmtStamp(d.lastRun.at) : 'never'}. Scores, standings, pitching, rainouts and Snack Shack screens arrive in the phased updates.`);
+  soonNote(body, `Last schedule sync: ${d.lastRun ? fmtStamp(d.lastRun.at) : 'never'}. Standings, pitching, rainouts and Snack Shack screens arrive in the phased updates.`);
 }
 async function todaySnack(body) {
   body.innerHTML = `<div class="empty">Snack Shack shift tools arrive in a later update. You'll create shifts and see sign-ups here.</div>`;
+}
+
+// ── Scores: list, game detail and the score actions ───────────────────────────
+function hasStarted(g) { return g.started != null ? g.started : (g.past != null ? g.past : new Date(g.start) <= Date.now()); }
+// Does this game need an action from the signed-in coach?
+function coachNeeds(g) {
+  const st = g.score ? g.score.status : 'none';
+  if (!hasStarted(g)) return false;
+  if (g.side === 'home' && st === 'none') return true;
+  if (g.side === 'away' && st === 'entered') return true;
+  return false;
+}
+// Does this game need a director/admin decision (dispute or out-of-town)?
+function manageNeeds(g) {
+  const st = g.score ? g.score.status : 'none';
+  return st === 'disputed' || st === 'approval';
+}
+const SCORE_BADGE = { entered: ['Waiting for away coach', 'b-blue'], approval: ['Needs director approval', 'b-yellow'], disputed: ['Disputed', 'b-red'], final: ['Final', 'b-green'] };
+function scoreBadge(sc) {
+  if (!sc || sc.status === 'none') return '<span class="badge b-yellow">No score yet</span>';
+  if (sc.status === 'final' && sc.enteredInSE) return '<span class="badge b-navy">Entered in SE</span>';
+  const [t, c] = SCORE_BADGE[sc.status] || ['', 'b-gray'];
+  return `<span class="badge ${c}">${esc(t)}</span>${sc.forfeit ? ' <span class="badge b-gray">Forfeit</span>' : ''}`;
+}
+function scoreLineHTML(g, sc) {
+  return `<span class="matchup"><b>${esc(g.home)}</b> ${sc ? sc.homeRuns : '–'} <span class="muted">vs</span> ${sc ? sc.awayRuns : '–'} <b>${esc(g.away)}</b></span>`;
+}
+
+// The Scores list (role-aware). Tapping a game opens its detail.
+async function viewScores(main) {
+  const coach = S.activeRole === 'coach';
+  main.innerHTML = `<h2>Scores</h2><p class="sub">${coach ? 'Enter your home games, confirm or dispute your away games.' : 'Settle disputes, approve out-of-town games and mark forfeits for your division.'}</p><div id="sc-body"><p class="muted">Loading…</p></div>`;
+  const body = $('#sc-body');
+  let games;
+  if (coach) {
+    const d = await api('GET', '/api/coach/scores');
+    if (d.pending) { body.innerHTML = `<div class="note info">We're still linking you to your team.</div>`; return; }
+    games = (d.games || []).map(g => ({ ...g, _needs: coachNeeds(g) }));
+  } else {
+    const d = await api('GET', '/api/admin/overview');
+    games = (d.games || []).filter(g => g.status !== 'cancelled' && g.status !== 'rainout' && (hasStarted(g) || g.score))
+      .map(g => ({ ...g, side: null, _needs: manageNeeds(g) }));
+  }
+  if (!games.length) { body.innerHTML = `<div class="empty">No games to score yet.</div>`; return; }
+  const needs = games.filter(g => g._needs);
+  const rest = games.filter(g => !g._needs);
+  const row = g => `<button class="scrow ${g._needs ? 'needs' : ''}" data-game="${g.id}">
+    <span class="scrow-main">${scoreLineHTML(g, g.score)}<span class="small muted block">${esc(fmtWhen(g.start))} · ${esc(g.division)}</span></span>
+    <span class="scrow-side">${g._needs ? '<span class="badge b-red">Needs you</span>' : scoreBadge(g.score)}</span></button>`;
+  body.innerHTML =
+    (needs.length ? `<h3>Needs you</h3><div class="sclist">${needs.map(row).join('')}</div>` : '') +
+    (rest.length ? `<h3>${needs.length ? 'Other games' : 'Games'}</h3><div class="sclist">${rest.map(row).join('')}</div>` : '');
+  body.querySelectorAll('[data-game]').forEach(b => { b.onclick = () => openGame(b.dataset.game, 'scores'); });
+}
+
+function openGame(id, from) { S.game = { id }; S.gameFrom = from || 'today'; S.tab = 'game'; renderBottomNav(); loadTab(); }
+
+async function loadGameCtx(id) {
+  if (S.activeRole === 'coach') {
+    const d = await api('GET', '/api/coach/scores');
+    const g = (d.games || []).find(x => x.id === id);
+    if (g) return { g, side: g.side, manage: false };
+  }
+  if (S.activeRole === 'director' || S.activeRole === 'admin') {
+    const d = await api('GET', '/api/admin/overview');
+    const g = (d.games || []).find(x => x.id === id);
+    if (g) return { g: { ...g, side: null }, side: null, manage: true };
+  }
+  const cd = await api('GET', '/api/coach/scores');
+  const cg = (cd.games || []).find(x => x.id === id);
+  if (cg) return { g: cg, side: cg.side, manage: false };
+  throw new Error('That game is no longer available.');
+}
+
+async function viewGame(main) {
+  const id = S.game && S.game.id;
+  main.innerHTML = `<button class="link gd-back" id="gd-back">‹ Back</button><div id="gd"><p class="muted">Loading…</p></div>`;
+  $('#gd-back').onclick = () => go(S.gameFrom || 'today');
+  let ctx;
+  try { ctx = await loadGameCtx(id); } catch (e) { $('#gd').innerHTML = `<div class="note bad">${esc(e.message)}</div>`; return; }
+  const { g, side, manage } = ctx;
+  $('#gd').innerHTML = `
+    <div class="gd-head">
+      <div class="gd-teams">${esc(g.away)} <span class="muted">at</span> ${esc(g.home)}</div>
+      <div class="small muted">${esc(fmtWhen(g.start))} · ${esc(g.division)}${g.field ? ' · ' + esc(g.field) : ''}</div>
+    </div>
+    <div class="gd-sec"><h3>Score</h3>${scoreSection(g, side, manage)}</div>
+    <div class="gd-sec gd-soon"><h3>Pitchers</h3><p class="muted small">Logging pitch counts arrives in the pitching update.</p></div>
+    <div class="gd-sec gd-soon"><h3>Who can pitch</h3><p class="muted small">Pre-game eligibility arrives in the pitching update.</p></div>
+    ${g.slots ? `<div class="gd-sec"><h3>Umpires</h3>${umpiresSection(g)}</div>` : ''}`;
+  $('#gd').querySelectorAll('[data-score]').forEach(b => { b.onclick = () => scoreAction(b.dataset.score, g, side, manage); });
+}
+
+function umpiresSection(g) {
+  return `<div class="row">${SLOTS.map(k => {
+    const s = g.slots[k] || {};
+    const who = s.name || s.umpire;
+    return `<div class="slot ${who ? 'filled' : 'open'}"><div class="k">${LABEL[k]}</div><div class="v">${who ? esc(who) : 'Open'}</div></div>`;
+  }).join('')}</div>`;
+}
+
+function scoreSection(g, side, manage) {
+  const sc = g.score;
+  const live = hasStarted(g);
+  const st = sc ? sc.status : 'none';
+  let h = '<div class="scorebox">';
+  if (sc && st !== 'none') {
+    h += `<div class="score-big"><b>${esc(g.home)}</b> <span class="sc">${sc.homeRuns}</span> – <span class="sc">${sc.awayRuns}</span> <b>${esc(g.away)}</b></div>`;
+    h += `<div class="row mt">${scoreBadge(sc)}</div>`;
+    if ((sc.homeHR && sc.homeHR.length) || (sc.awayHR && sc.awayHR.length)) h += `<div class="small muted mt">Home runs — ${esc(g.home)}: ${sc.homeHR && sc.homeHR.length ? esc(sc.homeHR.join(', ')) : 'none'} · ${esc(g.away)}: ${sc.awayHR && sc.awayHR.length ? esc(sc.awayHR.join(', ')) : 'none'}</div>`;
+    if (st === 'entered' && sc.autoConfirmBy) h += `<div class="note info mt">If the away coach doesn't respond, this becomes final on its own around ${esc(fmtStamp(sc.autoConfirmBy))}.</div>`;
+    if (st === 'disputed' && sc.disputeNote) h += `<div class="note warn mt">Dispute note: ${esc(sc.disputeNote)}</div>`;
+  } else {
+    h += `<div class="muted">No score entered yet.</div>`;
+  }
+  if (!live) { h += `<div class="note mt">Scores open once the game has started.</div>`; return h + '</div>'; }
+  const acts = [];
+  if (st === 'none' || st === 'entered') {
+    if (side === 'home' || manage) acts.push(sbtn(sc && st === 'entered' ? 'Correct score' : 'Enter score', 'enter', 'btn'));
+    if (side === 'away' && st === 'entered') { acts.push(sbtn('Confirm score', 'confirm', 'btn green')); acts.push(sbtn('Dispute', 'dispute', 'btn ghost')); }
+  }
+  if (st === 'approval' && manage) acts.push(sbtn('Approve score', 'approve', 'btn green'));
+  if (st === 'disputed' && manage) acts.push(sbtn('Settle to final', 'settle', 'btn'));
+  if (st === 'final' && manage) { acts.push(sbtn('Correct score', 'settle', 'btn ghost')); if (!sc.enteredInSE) acts.push(sbtn('Mark entered in SE', 'enteredse', 'btn ghost')); }
+  if (manage && live && st !== 'final' && st !== 'approval') acts.push(sbtn('Mark forfeit', 'forfeit', 'btn ghost'));
+  if (acts.length) h += `<div class="row mt gd-acts">${acts.join('')}</div>`;
+  else if (side === 'away' && st === 'approval') h += `<div class="note mt">This is an out-of-town game — your division director approves the score.</div>`;
+  else if (side && st === 'disputed') h += `<div class="note mt">This score is in dispute. Your division director will settle it.</div>`;
+  else if (side === 'away' && st === 'none') h += `<div class="note mt">Waiting for the home coach to enter the score.</div>`;
+  else if (st === 'final') h += `<div class="note good mt">This score is final.</div>`;
+  return h + '</div>';
+}
+function sbtn(label, act, cls) { return `<button class="${cls}" data-score="${act}">${esc(label)}</button>`; }
+
+async function scoreAction(act, g, side, manage) {
+  const id = g.id;
+  const base = `/api/admin/games/${id}/score`;
+  try {
+    if (act === 'enter' || act === 'settle' || act === 'dispute' || act === 'forfeit') { scoreForm(g, act, manage); return; }
+    if (act === 'confirm') {
+      if (!await confirmBox('Confirm this score?', `${esc(g.home)} ${g.score.homeRuns} – ${g.score.awayRuns} ${esc(g.away)}. Once you confirm, this becomes the final score.`, 'Confirm score')) return;
+      await api('POST', '/api/coach/score/confirm', { gameId: id, homeRuns: g.score.homeRuns, awayRuns: g.score.awayRuns });
+      toast('Score confirmed.'); return loadTab();
+    }
+    if (act === 'approve') {
+      if (!await confirmBox('Approve this score?', `${esc(g.home)} ${g.score.homeRuns} – ${g.score.awayRuns} ${esc(g.away)}. This marks the out-of-town game final.`, 'Approve')) return;
+      await api('POST', `${base}/approve`); toast('Score approved.'); return loadTab();
+    }
+    if (act === 'enteredse') {
+      if (!await confirmBox('Mark entered in SportsEngine?', 'Tick this once you have copied the score into SportsEngine.', 'Mark entered')) return;
+      await api('POST', `${base}/entered-se`); toast('Marked entered in SE.'); return loadTab();
+    }
+  } catch (e) { toast(e.message, true); }
+}
+
+function scoreForm(g, kind, manage) {
+  const id = g.id, sc = g.score;
+  if (kind === 'dispute') {
+    modal('Dispute this score', `<p class="small muted">Tell your division director what's wrong; they'll settle it.</p><label>What's wrong?<textarea name="note" style="min-height:90px" placeholder="e.g. the final was 7–5, not 5–7"></textarea></label>`, async v => {
+      await api('POST', '/api/coach/score/dispute', { gameId: id, note: v.note }); toast('Dispute sent to your director.'); loadTab();
+    }, { submitLabel: 'Send dispute', danger: true });
+    return;
+  }
+  if (kind === 'forfeit') {
+    modal('Mark a forfeit', `<p class="small muted">A forfeit is recorded as 6–0 to the winning team.</p><label>Who won?<select name="winner"><option value="home">${esc(g.home)} (home)</option><option value="away">${esc(g.away)} (away)</option></select></label>`, async v => {
+      await api('POST', `/api/admin/games/${id}/score/forfeit`, { winner: v.winner }); toast('Forfeit recorded.'); loadTab();
+    }, { submitLabel: 'Record forfeit' });
+    return;
+  }
+  const isSettle = kind === 'settle';
+  const hr = isSettle ? '' : `<fieldset><legend>Who hit home runs? (optional)</legend>
+    <label>${esc(g.home)}<input name="homeHR" value="${sc && sc.homeHR ? esc(sc.homeHR.join(', ')) : ''}" placeholder="names, comma separated"></label>
+    <label>${esc(g.away)}<input name="awayHR" value="${sc && sc.awayHR ? esc(sc.awayHR.join(', ')) : ''}" placeholder="names, comma separated"></label></fieldset>`;
+  modal(isSettle ? 'Set the final score' : (sc && sc.status !== 'none' ? 'Correct the score' : 'Enter the final score'),
+    `<div class="grid2">
+      <label>${esc(g.home)} (home)<input name="homeRuns" type="number" inputmode="numeric" min="0" max="99" required value="${sc && sc.status !== 'none' ? sc.homeRuns : ''}"></label>
+      <label>${esc(g.away)} (away)<input name="awayRuns" type="number" inputmode="numeric" min="0" max="99" required value="${sc && sc.status !== 'none' ? sc.awayRuns : ''}"></label>
+    </div>${hr}${!isSettle && !manage ? '<p class="small muted">The away coach confirms or disputes within 24 hours, or it confirms on its own.</p>' : ''}`,
+    async v => {
+      const bodyData = { gameId: id, homeRuns: Number(v.homeRuns), awayRuns: Number(v.awayRuns) };
+      if (!isSettle) { bodyData.homeHR = v.homeHR || ''; bodyData.awayHR = v.awayHR || ''; }
+      if (manage) await api('POST', `/api/admin/games/${id}/score/${isSettle ? 'settle' : 'enter'}`, bodyData);
+      else await api('POST', '/api/coach/score', bodyData);
+      toast('Score saved.'); loadTab();
+    }, { submitLabel: 'Save score' });
+}
+
+// Director/admin: the "enter in SE" hand-off list.
+async function viewEnterSE(main) {
+  const d = await api('GET', '/api/admin/enter-se');
+  main.innerHTML = `<h2>Enter in SportsEngine</h2><p class="sub">Final scores not yet copied into SportsEngine. Copy each into SE, then tick it off.</p>
+    ${d.list.length ? `<div class="sclist">${d.list.map(x => `<div class="scrow static">
+      <span class="scrow-main"><b>${esc(x.score)}</b><span class="small muted block">${esc(x.when)} · ${esc(x.division)}${x.forfeit ? ' · forfeit' : ''}</span></span>
+      <span class="scrow-side"><button class="btn sm" data-se="${x.id}">Mark entered</button></span></div>`).join('')}</div>` : '<div class="empty">Nothing waiting — every final score is in SportsEngine.</div>'}`;
+  main.querySelectorAll('[data-se]').forEach(b => { b.onclick = async () => {
+    try { await api('POST', `/api/admin/games/${b.dataset.se}/score/entered-se`); toast('Marked entered.'); viewEnterSE(main); }
+    catch (e) { toast(e.message, true); }
+  }; });
 }
 
 // ── Sign in / sign up ────────────────────────────────────────────────────────

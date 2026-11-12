@@ -194,6 +194,29 @@ body.signed-in .bottomnav { display: flex; }
 .sheet .sh-item.active { color: var(--red); font-weight: 650; }
 .sheet .sh-item.active svg { color: var(--red); }
 
+/* Scores list */
+.sclist { display: grid; gap: 8px; margin-bottom: 8px; }
+.scrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; cursor: pointer; color: inherit; font: inherit; }
+.scrow:hover { border-color: var(--navy); }
+.scrow.static { cursor: default; }
+.scrow.static:hover { border-color: var(--border); }
+.scrow.needs { border-color: var(--red-bd); box-shadow: inset 3px 0 0 var(--red); }
+.scrow-main { min-width: 0; }
+.scrow .matchup { font-size: 14px; }
+.scrow .block { display: block; margin-top: 2px; }
+.scrow-side { flex: none; }
+
+/* Game detail */
+.gd-back { margin-bottom: 10px; display: inline-block; }
+.gd-head { border-bottom: 2px solid var(--navy); padding-bottom: 8px; margin-bottom: 4px; }
+.gd-teams { font-size: 17px; font-weight: 700; color: var(--navy); }
+.gd-sec { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.gd-sec:last-child { border-bottom: none; }
+.gd-soon { opacity: .7; }
+.scorebox .score-big { font-size: 20px; }
+.scorebox .score-big .sc { font-weight: 750; color: var(--navy); font-variant-numeric: tabular-nums; }
+.gd-acts { gap: 8px; }
+
 .empty { text-align: center; color: var(--muted); padding: 36px 12px; border: 1px dashed var(--border); border-radius: 10px; }
 .hist { font-size: 11px; color: var(--muted); margin-top: 6px; display: grid; gap: 2px; }
 details summary { cursor: pointer; font-size: 12px; color: var(--navy); }
