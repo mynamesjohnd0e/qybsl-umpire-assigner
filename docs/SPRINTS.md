@@ -175,6 +175,26 @@ Tests:
 
 Done when: 2027 is loaded, every coach can sign in, and a rollback has been practiced.
 
+## Sprint 10 · Apr 12–30 · Whole-app dress rehearsal
+
+Why: every feature has its own deep tests, but nothing yet exercises the whole league — all five divisions at once — in one run, driving every feature in the order a real season uses them and checking the handoffs between them (import → rosters → staffing → scores → standings → brackets → pitching → rainouts → Snack Shack → payouts → backup). This is the synthetic-data dress rehearsal before go-live.
+
+Build: one comprehensive synthetic dataset (`test/helpers/league2027.js`) covering all five divisions with made-up names only — teams and coaches, Minors/Majors player rosters with league ages (including 12-year-olds), umpires with parents, a Babe Ruth other-town opponent, and Snack Shack shifts — and one end-to-end walk (`test/api/e2e-season.test.js`) that drives every feature against it as the real roles.
+
+Tests (the walk, each phase a test, asserting outcomes and the handoff to the next):
+- Import a multi-division schedule (preview = actual; T-ball skipped; the other-town game flagged; zero unmatched teams).
+- Rosters load with correct league ages and no birthdates kept.
+- Umpires staff Farm games (claim, swap) and a director assigns a patched Majors game; the plate-qualified rule holds.
+- Scores run the full path — coach enters, coach confirms, a dispute the director settles, a forfeit (6–0), an other-town approval, and one left for the 24-hour auto-confirm.
+- Standings compute with a tiebreaker coin toss; a Majors double-elimination and a single-elimination bracket seed and play out.
+- Pitch counts drive rest-day eligibility, the 12-year-old weekly innings cap, and a single violation alert, carried into a playoff eligibility check.
+- A field closure rains games out and a re-upload pairs a makeup to its original.
+- Snack Shack shifts fill (leak-proof, last-spot safe), a cancel link works, and a full-day closure cancels the shifts.
+- Payouts pay each worked spot once and never a no-show.
+- Backup → wipe → restore matches record for record, the self-check reads ok, and across the whole season nobody outside coaches, umpires, umpires' parents and league staff was ever messaged.
+
+Done when: the end-to-end walk is green, the planted-bug gate still catches every rule, and John has watched the dress rehearsal run.
+
 ## Definition of done (every sprint)
 
 - [ ] Every rule added has tests at its boundaries, not one typical case.

@@ -29,7 +29,7 @@ Sign-up, swaps, reminders, coach confirmations and payouts for Farm 8 / Farm 9 s
 | `public/` | The web pages |
 | `lib/simulator.js` | Season simulator: replays the 2026 schedule day by day on the clock for the practice-season acceptance tests |
 | `lib/backup.js` | Whole-league backup/restore (record-for-record; restore is test-copy only) and the post-deploy self-check |
-| `test/unit/`, `test/api/`, `test/integration/` | The test suite (`npm test`); helpers in `test/helpers/`; the season replay is `test/api/season.test.js` |
+| `test/unit/`, `test/api/`, `test/integration/` | The test suite (`npm test`); helpers in `test/helpers/`; the season replay is `test/api/season.test.js`; the all-divisions dress rehearsal is `test/api/e2e-season.test.js` (dataset in `test/helpers/league2027.js`) |
 | `scripts/planted-bugs.js` | Breaks each rule in turn and checks a test goes red (`npm run planted-bugs`) |
 | `scripts/demo-seed.js` | Fills a local copy with fake umpires, coaches and games |
 

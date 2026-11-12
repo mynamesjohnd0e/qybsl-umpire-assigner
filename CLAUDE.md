@@ -8,7 +8,7 @@ Read these before starting work:
 - `docs/UMPIRE_SPEC.md` – the original umpire scheduling requirements (already built).
 - The living versions of the plan are in a Claude Doc: https://claude.ai/artifact/PXviRPquoZzbV8hhHMjSEb. If the two disagree, ask John which wins.
 
-**Current sprint: Sprint 9 (Mar 22–Apr 9, 2027) – Go-live: upload preview (see a schedule upload's changes before saving), backup + restore (record-for-record, restore test-copy only), a post-deploy self-check, and the Firestore-backup / Cloud-Run-rollback runbook. Then load 2027 and show coaches the app.** See `docs/SPRINTS.md`. (Sprints 0–8 are merged.)
+**Current sprint: Sprint 10 (Apr 12–30, 2027) – Whole-app dress rehearsal: one synthetic league across all five divisions (`test/helpers/league2027.js`) and one end-to-end walk (`test/api/e2e-season.test.js`) that drives every feature in season order as the real roles, checking the handoffs between them (import → rosters → staffing → scores → standings → brackets → pitching → rainouts → Snack Shack → payouts → backup).** See `docs/SPRINTS.md`. (Sprints 0–9 are merged.)
 
 ## Stack and conventions
 
