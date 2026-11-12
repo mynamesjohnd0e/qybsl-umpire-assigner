@@ -168,6 +168,32 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .auth .brand b { display: block; color: var(--navy); font-size: 20px; }
 .auth .brand span { color: var(--muted); font-size: 13px; }
 
+/* Bottom navigation */
+body.signed-in .shell { padding-bottom: 92px; }
+.bottomnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: none; background: #fff; border-top: 1px solid var(--border); box-shadow: 0 -2px 12px rgba(0,0,0,.06); padding-bottom: env(safe-area-inset-bottom); }
+body.signed-in .bottomnav { display: flex; }
+.bottomnav .bn { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 9px; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 11px; font-weight: 650; position: relative; }
+.bottomnav .bn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.bottomnav .bn svg { width: 22px; height: 22px; }
+.bottomnav .bn.active { color: var(--red); }
+.bottomnav .bn .bn-badge { position: absolute; top: 3px; left: 50%; margin-left: 3px; }
+.bottomnav .bn .bn-badge:empty { display: none; }
+
+/* Role switcher in the header */
+.who .rolesw { background: rgba(255,255,255,.14); color: #fff; border: none; border-radius: 16px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.who .rolesw option { color: #111; }
+.who .who-name { white-space: nowrap; }
+
+/* "More" sheet */
+.sheet-bg { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 25; display: flex; align-items: flex-end; }
+.sheet { background: #fff; width: 100%; max-width: 980px; margin: 0 auto; border-radius: 14px 14px 0 0; padding: 8px 8px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -12px 40px rgba(0,0,0,.25); }
+.sheet-h { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--hint); font-weight: 700; padding: 8px 12px 4px; }
+.sheet .sh-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 14px; background: none; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; color: var(--text); text-align: left; }
+.sheet .sh-item:hover { background: var(--bg); }
+.sheet .sh-item svg { width: 20px; height: 20px; color: var(--navy); }
+.sheet .sh-item.active { color: var(--red); font-weight: 650; }
+.sheet .sh-item.active svg { color: var(--red); }
+
 .empty { text-align: center; color: var(--muted); padding: 36px 12px; border: 1px dashed var(--border); border-radius: 10px; }
 .hist { font-size: 11px; color: var(--muted); margin-top: 6px; display: grid; gap: 2px; }
 details summary { cursor: pointer; font-size: 12px; color: var(--navy); }
