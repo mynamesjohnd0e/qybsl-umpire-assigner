@@ -40,7 +40,7 @@ const BUGS = [
     file: 'lib/payouts.js',
     find: "if (sl.worked === 'worked') {",
     replace: "if (sl.worked === 'worked' || sl.worked === 'noshow') {",
-    tests: ['test/api/payouts.test.js']
+    tests: ['test/api/payouts.test.js', 'test/api/e2e-season.test.js']
   },
   {
     name: 'parent copy dropped from umpire messages',
@@ -98,7 +98,7 @@ const BUGS = [
     file: 'lib/scores.js',
     find: 'const FORFEIT_RUNS = 6;',
     replace: 'const FORFEIT_RUNS = 5;',
-    tests: ['test/api/scores.test.js', 'test/unit/scores.test.js']
+    tests: ['test/api/scores.test.js', 'test/unit/scores.test.js', 'test/api/e2e-season.test.js']
   },
   {
     name: 'an out-of-town game auto-confirms instead of waiting for approval',
@@ -185,7 +185,7 @@ const BUGS = [
     file: 'lib/pitching.js',
     find: 'over: outs > capOuts,',
     replace: 'over: false,',
-    tests: ['test/unit/pitching.test.js', 'test/api/eligibility.test.js']
+    tests: ['test/unit/pitching.test.js', 'test/api/eligibility.test.js', 'test/api/e2e-season.test.js']
   },
   {
     name: 'a violation alert is sent on every edit, not once per problem',
@@ -280,7 +280,7 @@ const BUGS = [
     file: 'lib/sync.js',
     find: 'if (opts.preview) return summary;',
     replace: 'if (false) return summary;',
-    tests: ['test/api/golive.test.js']
+    tests: ['test/api/golive.test.js', 'test/api/e2e-season.test.js']
   },
   {
     name: 'the self-check reads ok even with no admin configured',
