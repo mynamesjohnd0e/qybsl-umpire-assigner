@@ -1,6 +1,6 @@
 # Front-End Requirements – League Operations
 
-Status: **Draft for John's review**, Nov 12, 2026. Owner: John Higgins.
+Status: **Approved — all decisions locked**, Nov 12, 2026. Owner: John Higgins.
 Companion to `docs/PLAN.md` (what we're building) and `docs/SPRINTS.md` (how we build and test).
 This document covers only the **web app people see** — the screens — not the server rules, which already exist.
 
@@ -43,12 +43,16 @@ admin coverage, people, ratings, payouts, schedule sync, messages, settings, acc
 ## 2. Decisions locked (from John, Nov 12)
 
 1. **Deliverable now:** this written requirements doc. No code yet.
-2. **Navigation:** a **bottom navigation bar** (app-like), replacing the top tab row as features grow.
-3. **Snack Shack public sign-up:** a **separate, no-login page** (e.g. `/volunteer`), its own simple look.
+2. **Navigation:** a **bottom navigation bar** (app-like) with a **simple line icon + text label** on each
+   item, replacing the top tab row as features grow.
+3. **Snack Shack public sign-up:** a **separate, no-login page** titled **"Quarry Snack Shack Staffing"**
+   (path `/snack-shack`), its own simple look — no app chrome.
 4. **Scope:** plan **all roles**; phase the build in the order of §9 (approved Nov 12).
 5. **Home runs:** score entry **captures who hit the home runs** (hitter names per side), not just a count.
 6. **"Who can pitch":** the **pre-game eligibility snapshot only** — no season-long per-player pitch history
    for coaches.
+7. **Multiple roles:** a person with more than one role gets a **role switcher in the top-right**; the bottom
+   nav and Today follow the **active role**. No merged bar. Single-role people never see the switcher.
 
 ### Inherited, non-negotiable from `CLAUDE.md` (not re-decided)
 
@@ -80,12 +84,16 @@ reuses it** — we are extending a house style, not starting over.
 | Test-copy warning banner | Keep on every screen of the test copy |
 
 **New components needed** (small, built in the same style):
-- **Bottom navigation bar** (fixed, ≤5 items, safe-area aware for phones).
+- **Bottom navigation bar** (fixed, ≤5 items, safe-area aware for phones) — each item a **simple line icon
+  above a short text label** (e.g. home, calendar, trophy, clipboard, list). Icons are inline SVG, navy;
+  the active item is red, matching the current tab treatment.
+- **Role switcher** — a small dropdown in the **top-right** (next to the name/Sign-out), shown only to
+  people with more than one role. Picking a role re-renders the bottom nav and Today for that role.
 - **"More" sheet** — a slide-up menu for destinations beyond the 5th nav slot.
 - **Game detail screen** — one game opened full, with sections (Score / Pitchers / Eligibility / Umpires).
 - **Bracket view** — a simple, horizontally-scrollable playoff tree (navy lines, higher seed marked home).
-- **Score entry stepper** — big number inputs for two scores, optional home-run names.
-- The **public volunteer page** — its own minimal shell, no app chrome, no login.
+- **Score entry stepper** — big number inputs for two scores, plus home-run hitter names per side.
+- The **"Quarry Snack Shack Staffing" page** — its own minimal shell, no app chrome, no login.
 
 ---
 
@@ -104,13 +112,15 @@ It answers "what do I need to do right now?" This is the single biggest usabilit
 | Snack Shack Director | Unfilled shifts this week; shifts to create/copy |
 | Board admin | Everything above across divisions, plus: uploads pending, open field closures, backup status |
 
-One person can hold several roles; Today **merges** their tasks into one list, newest/urgent first.
+One person can hold several roles. They pick the **active role** from the top-right **role switcher**
+(§4.2); Today then shows that role's tasks, newest/urgent first. Someone with one role sees no switcher and
+simply lands on their Today.
 
 ### 4.2 Bottom navigation (per role)
 
-The bar shows **up to 5 destinations**; slot 1 is always **Today**, slot 5 is **More** when there's
-overflow. The set is chosen from the person's roles. Badges (red count pills, reusing `setBadge`)
-sit on the icon when action is waiting.
+The bar shows **up to 5 destinations**, each a **line icon above a text label**; slot 1 is always **Today**,
+slot 5 is **More** when there's overflow. The set follows the **active role** (see the role switcher below).
+Badges (red count pills, reusing `setBadge`) sit on the icon when action is waiting.
 
 | Role | Bottom bar (left → right) | Behind "More" |
 | --- | --- | --- |
@@ -123,7 +133,10 @@ sit on the icon when action is waiting.
 - **"Games"** is the hub for coaches/directors/admins: a filtered list of games where each game opens
   the **Game detail** screen. Most in-season work (score, pitchers, eligibility, umpires) happens there,
   so the bar stays short.
-- A person who is **coach + admin** gets the admin bar with coach tasks folded into Today and Games.
+- **Multiple roles — the switcher, not a merged bar.** A person who is, say, **director + admin** sees a
+  **role switcher in the top-right**; the bottom bar and Today reflect whichever role is active, so each
+  role stays clean and uncluttered. Division scoping still applies while the director role is active. The
+  switcher lists only the roles that person actually holds, and never appears for a single-role user.
 
 ### 4.3 Game detail — the in-season workhorse
 
@@ -247,10 +260,11 @@ Score **status badges** (reuse `.badge`): *Needs score* (yellow) · *Waiting for
 - A weekly **unfilled-shifts** summary (the server also emails it).
 - A full Quarry Hills closure cancels that day's shifts and tells the volunteers (shown as state here).
 
-### 5.9 Snack Shack — public volunteer page  *(Sprint 7 server)* — **separate, no login** — `GET/POST /api/public/snack/*`
+### 5.9 "Quarry Snack Shack Staffing" — public page  *(Sprint 7 server)* — **separate, no login** — `GET/POST /api/public/snack/*`
 
-- Its **own minimal page** (`/volunteer`): QYBSL header, a list of upcoming shifts with **spots left**,
-  and a sign-up form (**name, email, mobile** — no account). Server returns counts only.
+- Its **own minimal page** at **`/snack-shack`**, titled **"Quarry Snack Shack Staffing"**: QYBSL header,
+  a list of upcoming shifts with **spots left**, and a sign-up form (**name, email, mobile** — no account).
+  Server returns counts only. This is the link you'd text parents.
 - **Privacy is a hard requirement:** the public page shows **spots left only — never another volunteer's
   name, email or phone.**
 - Confirmation screen + a **cancel link** (emailed) that only cancels **their own** sign-up and reopens
@@ -324,19 +338,15 @@ order end to end.
 
 ## 8. Open questions for John
 
-*Resolved Nov 12: coaches capture home-run hitters' names (§2.5, §5.1); "Who can pitch" is the pre-game
-snapshot only (§2.6, §5.5); phasing approved (§9).*
+**All resolved as of Nov 12** — no open questions remain:
 
-Still open:
-
-1. **Icons for the bottom bar** — plain text labels only, or simple line icons too? (Text-only is faster
-   to ship and very legible; icons feel more app-like.)
-2. **Director vs. admin overlap** — some directors may also be board admins. Confirm the merged bottom bar
-   (admin bar wins, division scoping still applies) reads right to you.
-3. **Volunteer page address** — is `/volunteer` the link you'd text parents, or do you want something you
-   can brand/remember more easily?
-4. **Living copy** — do you want this mirrored into the plan Claude Doc (like `PLAN.md`/`SPRINTS.md`) so it
-   lives beside the rest?
+- Score entry captures home-run hitters' names (§2.5, §5.1).
+- "Who can pitch" is the pre-game snapshot only (§2.6, §5.5).
+- Bottom nav uses **line icons + text labels** (§2.2, §3, §4.2).
+- Multiple roles handled by a **top-right role switcher**, not a merged bar (§2.7, §4.2).
+- Public page titled **"Quarry Snack Shack Staffing"** at `/snack-shack` (§2.3, §5.9).
+- This doc is **mirrored into the plan Claude Doc** beside `PLAN.md`/`SPRINTS.md`.
+- Phasing approved (§9).
 
 ---
 
@@ -353,7 +363,7 @@ demoable on a phone. This is a *build* sequence; the requirements above are the 
 | **F3 — Standings & brackets** | Standings tables, tie/coin-toss, bracket view, seeding | Reads scores; needed before playoffs | 2026 scores → 2026 standings → a bracket |
 | **F4 — Pitching** | Pitch logging, eligibility, violations, 12-yo cap | Independent of scores; coaches' other in-season task | Log a 66-pitch outing → see 4 days rest |
 | **F5 — Rainouts** | Field closures, rained-out states, reopen, comms note | Needs games/scores in place to show what's affected | Close Quarry Hills Saturday; see who's told |
-| **F6 — Snack Shack** | Staff shifts + **public `/volunteer` page** | Self-contained; the one no-login surface | Sign up from a phone with no account |
+| **F6 — Snack Shack** | Staff shifts + **public "Quarry Snack Shack Staffing" page** (`/snack-shack`) | Self-contained; the one no-login surface | Sign up from a phone with no account |
 | **F7 — Admin & go-live** | Upload preview, roster/teams view, backup/restore/self-check | Pre-season and safety tooling for the real import | Preview a 2027 import; practice a restore |
 
 My recommendation: **F1 first regardless** (the nav and Today are the foundation), then **F2 → F3**
