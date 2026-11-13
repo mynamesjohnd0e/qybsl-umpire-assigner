@@ -62,4 +62,4 @@ const confirmBox = (title, text, label, danger) => new Promise(res => {
   $('#modal-root [data-close]').addEventListener('click', () => res(false));
 });
 
-export { $, esc, SLOTS, LABEL, S, api, toast, fmtDay, fmtTime, fmtWhen, fmtStamp, keyLabel, weekLabel, matchup, first, money, groupBy, modal, confirmBox };
+export { TZ, $, esc, SLOTS, LABEL, S, api, toast, fmtDay, fmtTime, fmtWhen, fmtStamp, keyLabel, weekLabel, matchup, first, money, groupBy, modal, confirmBox };

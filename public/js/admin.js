@@ -1,5 +1,5 @@
 // Admin screens: coverage, people, ratings, payouts, schedule sync, messages, settings.
-import { $, esc, SLOTS, LABEL, S, api, toast, fmtDay, fmtTime, fmtWhen, fmtStamp, keyLabel, weekLabel, matchup, first, money, groupBy, modal, confirmBox } from './core.js';
+import { TZ, $, esc, SLOTS, LABEL, S, api, toast, fmtDay, fmtTime, fmtWhen, fmtStamp, keyLabel, weekLabel, matchup, first, money, groupBy, modal, confirmBox } from './core.js';
 import { boot, go, loadTab, setBadge, renderBottomNav, renderShell, act, closeSheet } from './nav.js';
 
 // ── Admin: coverage ──────────────────────────────────────────────────────────
@@ -472,4 +472,4 @@ async function viewSettings(main) {
 }
 
 
-export { viewCoverage, viewPeople, viewRatings, viewPayouts, viewSync, viewMessages, viewSettings };
+export { viewCoverage, viewPeople, viewRatings, viewPayouts, viewSync, viewMessages, viewSettings, easternToIso };
