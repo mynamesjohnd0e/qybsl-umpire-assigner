@@ -55,37 +55,41 @@ async function todayCoach(body) {
     tile(upcoming, 'Upcoming games', 'coach')
   ]);
   bindGo(body);
-  soonNote(body, 'Logging pitchers and pre-game eligibility arrive in the next update.');
+  soonNote(body, 'Open a game from Scores to log pitchers and check who can pitch.');
 }
 async function todayDirector(body) {
-  const [d, sd] = await Promise.all([api('GET', '/api/admin/overview'), api('GET', '/api/standings')]);
+  const [d, sd, vd] = await Promise.all([api('GET', '/api/admin/overview'), api('GET', '/api/standings'), api('GET', '/api/admin/pitching/violations')]);
   const c = d.counts || {};
   const scoreNeeds = (d.games || []).filter(manageNeeds).length;
   const myDivs = (S.me.director && S.me.director.divisions) || [];
   const ties = myDivs.reduce((n, dv) => n + tieClusters((sd.standings || {})[dv] || []).length, 0);
+  const alerts = (vd.violations || []).length;
   body.innerHTML = tileGrid([
     tile(scoreNeeds, 'Scores needing you', 'scores', scoreNeeds ? 'bad' : ''),
+    alerts ? tile(alerts, 'Pitch-count alerts', 'violations', 'bad') : '',
     ties ? tile(ties, 'Ties to break (coin toss)', 'standings', 'bad') : '',
     tile(c.open || 0, 'Games still needing umpires', 'cov'),
     tile(c.unconfirmed || 0, 'Past games, umpires unconfirmed', 'cov')
   ]);
   bindGo(body);
-  soonNote(body, 'Pitch violations and more tools arrive in the next updates.');
+  soonNote(body, 'Rainouts and Snack Shack tools arrive in the next updates.');
 }
 async function todayAdmin(body) {
-  const [d, sd] = await Promise.all([api('GET', '/api/admin/overview'), api('GET', '/api/standings')]);
+  const [d, sd, vd] = await Promise.all([api('GET', '/api/admin/overview'), api('GET', '/api/standings'), api('GET', '/api/admin/pitching/violations')]);
   const c = d.counts || {};
   const pending = (c.approvals || 0) + (c.coaches || 0);
   const scoreNeeds = (d.games || []).filter(manageNeeds).length;
   const ties = Object.values(sd.standings || {}).reduce((n, rows) => n + tieClusters(rows).length, 0);
+  const alerts = (vd.violations || []).length;
   body.innerHTML = tileGrid([
     tile(scoreNeeds, 'Scores needing you', 'scores', scoreNeeds ? 'bad' : ''),
+    alerts ? tile(alerts, 'Pitch-count alerts', 'violations', 'bad') : '',
     ties ? tile(ties, 'Ties to break (coin toss)', 'standings', 'bad') : '',
     tile(c.open || 0, 'Games needing umpires', 'cov'),
     tile(pending, 'People awaiting approval', 'people', pending ? 'bad' : '')
   ]);
   bindGo(body);
-  soonNote(body, `Last schedule sync: ${d.lastRun ? fmtStamp(d.lastRun.at) : 'never'}. Pitching, rainouts and Snack Shack screens arrive in the phased updates.`);
+  soonNote(body, `Last schedule sync: ${d.lastRun ? fmtStamp(d.lastRun.at) : 'never'}. Rainouts and Snack Shack screens arrive in the phased updates.`);
 }
 async function todaySnack(body) {
   body.innerHTML = `<div class="empty">Snack Shack shift tools arrive in a later update. You'll create shifts and see sign-ups here.</div>`;

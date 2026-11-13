@@ -240,6 +240,14 @@ body.signed-in .bottomnav { display: flex; }
 .bm .seedn.blank { background: transparent; }
 .bm-status { font-size: 10px; color: var(--hint); margin-top: 4px; }
 
+/* Pitch eligibility */
+.elig { display: grid; gap: 2px; }
+.elig-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.elig-row:last-child { border-bottom: none; }
+.elig-name { min-width: 0; font-size: 13px; }
+.elig-stat { flex: none; text-align: right; white-space: nowrap; }
+.jersey { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 4px; background: var(--gray-bg); color: var(--gray-tx); font-size: 11px; font-weight: 700; margin-right: 6px; }
+
 .empty { text-align: center; color: var(--muted); padding: 36px 12px; border: 1px dashed var(--border); border-radius: 10px; }
 .hist { font-size: 11px; color: var(--muted); margin-top: 6px; display: grid; gap: 2px; }
 details summary { cursor: pointer; font-size: 12px; color: var(--navy); }
