@@ -1,6 +1,7 @@
 // Scores: the role-aware list, the game-detail screen and the score actions.
 import { $, esc, SLOTS, LABEL, S, api, toast, fmtDay, fmtTime, fmtWhen, fmtStamp, keyLabel, weekLabel, matchup, first, money, groupBy, modal, confirmBox } from './core.js';
 import { go, loadTab, renderBottomNav } from './nav.js';
+import { renderPitching } from './pitching.js';
 
 // ── Scores: list, game detail and the score actions ───────────────────────────
 function hasStarted(g) { return g.started != null ? g.started : (g.past != null ? g.past : new Date(g.start) <= Date.now()); }
@@ -87,10 +88,10 @@ async function viewGame(main) {
       <div class="small muted">${esc(fmtWhen(g.start))} · ${esc(g.division)}${g.field ? ' · ' + esc(g.field) : ''}</div>
     </div>
     <div class="gd-sec"><h3>Score</h3>${scoreSection(g, side, manage)}</div>
-    <div class="gd-sec gd-soon"><h3>Pitchers</h3><p class="muted small">Logging pitch counts arrives in the pitching update.</p></div>
-    <div class="gd-sec gd-soon"><h3>Who can pitch</h3><p class="muted small">Pre-game eligibility arrives in the pitching update.</p></div>
+    <div id="gd-pitch"></div>
     ${g.slots ? `<div class="gd-sec"><h3>Umpires</h3>${umpiresSection(g)}</div>` : ''}`;
   $('#gd').querySelectorAll('[data-score]').forEach(b => { b.onclick = () => scoreAction(b.dataset.score, g, side, manage); });
+  renderPitching($('#gd'), g, side, manage);
 }
 
 function umpiresSection(g) {

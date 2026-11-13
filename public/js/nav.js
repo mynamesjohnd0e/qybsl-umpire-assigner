@@ -8,6 +8,7 @@ import { viewOpen, viewMine, viewPay } from './umpire.js';
 import { viewCoach } from './coach.js';
 import { viewCoverage, viewPeople, viewRatings, viewPayouts, viewSync, viewMessages, viewSettings } from './admin.js';
 import { viewAccount } from './account.js';
+import { viewViolations } from './pitching.js';
 
 async function act(fn, okMsg) {
   try { const r = await fn(); if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg); await loadTab(); return r; }
@@ -48,8 +49,8 @@ function defaultRole(roles) {
 const ROLE_NAV = {
   umpire:   { bar: ['today', 'open', 'mine', 'pay'], more: ['standings'] },
   coach:    { bar: ['today', 'coach', 'scores', 'standings'] },
-  director: { bar: ['today', 'cov', 'scores', 'standings'], more: ['brackets', 'entersse'] },
-  admin:    { bar: ['today', 'cov', 'scores', 'standings'], more: ['brackets', 'people', 'entersse', 'ratings', 'payouts', 'sync', 'msgs', 'settings'] },
+  director: { bar: ['today', 'cov', 'scores', 'standings'], more: ['brackets', 'violations', 'entersse'] },
+  admin:    { bar: ['today', 'cov', 'scores', 'standings'], more: ['brackets', 'violations', 'people', 'entersse', 'ratings', 'payouts', 'sync', 'msgs', 'settings'] },
   snack:    { bar: ['today'] },
   account:  { bar: ['today'] }
 };
@@ -80,6 +81,7 @@ const DEST = {
   standings:{ label: 'Standings', icon: 'rank',     view: viewStandings },
   brackets: { label: 'Playoffs', icon: 'trophy',    view: viewBrackets },
   entersse: { label: 'Enter in SE', icon: 'send',   view: viewEnterSE },
+  violations:{ label: 'Pitch alerts', icon: 'warn', view: viewViolations },
   game:     { label: 'Game',     icon: 'calendar',  view: viewGame }
 };
 
@@ -99,6 +101,7 @@ const ICONS = {
   send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
   rank: '<path d="M4 20h4v-9H4zM10 20h4V4h-4zM16 20h4v-6h-4z"/>',
   trophy: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v1a3 3 0 0 0 3 3M17 5h3v1a3 3 0 0 1-3 3M9 21h6M12 17v4"/>',
+  warn: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17.5v.5"/>',
   more: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>'
 };
 function icon(name) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ICONS.home}</svg>`; }
