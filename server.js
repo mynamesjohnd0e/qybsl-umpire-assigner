@@ -569,6 +569,8 @@ function cronAuth(req, res, next) {
 app.post('/api/cron/sync', cronAuth, h(async () => runSync({ by: 'nightly' })));
 app.post('/api/cron/tick', cronAuth, h(async () => jobs.tick()));
 
+// The public, no-login Snack Shack page (sign-up and the emailed cancel link).
+app.get(['/snack-shack', '/snack/cancel'], (_req, res) => res.sendFile(path.join(__dirname, 'public', 'snack-shack.html')));
 app.get(/^\/(?!api\/).*/, (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 if (require.main === module) {
