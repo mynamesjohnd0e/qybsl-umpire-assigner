@@ -144,7 +144,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .arow .what { font-size: 13px; }
 .arow .acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .aslot { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 4px; flex-wrap: wrap; }
-.aslot .k { width: 38px; font-weight: 700; color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.aslot .k { min-width: 38px; flex-shrink: 0; white-space: nowrap; font-weight: 700; color: var(--muted); font-size: 11px; text-transform: uppercase; }
 @media (max-width: 720px) { .arow { grid-template-columns: 1fr; } .arow .acts { justify-content: flex-start; } }
 
 /* Stars */
