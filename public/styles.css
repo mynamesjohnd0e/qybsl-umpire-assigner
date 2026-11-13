@@ -217,6 +217,29 @@ body.signed-in .bottomnav { display: flex; }
 .scorebox .score-big .sc { font-weight: 750; color: var(--navy); font-variant-numeric: tabular-nums; }
 .gd-acts { gap: 8px; }
 
+/* Standings & playoffs */
+.seedlist { margin: 4px 0 10px 22px; }
+.seedlist li { padding: 2px 0; }
+.ol { list-style: none; display: grid; gap: 6px; }
+.ol li { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.ol .ol-pos { width: 22px; height: 22px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+.ol .ol-name { flex: 1; font-weight: 600; }
+.ol .ol-btns { display: flex; gap: 10px; }
+.ol .ol-btns .link { font-size: 16px; text-decoration: none; }
+
+.br-scroll { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; }
+.br-col { display: flex; flex-direction: column; justify-content: space-around; gap: 12px; min-width: 156px; }
+.bm { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; background: #fff; }
+.bm.ready { border-color: var(--navy); }
+.bm.done { border-color: var(--green-bd); background: var(--green-bg); }
+.bm.muted-card { opacity: .6; }
+.bm-name { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+.bm-side { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 2px 0; }
+.bm-side.win { font-weight: 700; color: var(--navy); }
+.bm .seedn { width: 18px; height: 18px; border-radius: 4px; background: var(--gray-bg); color: var(--gray-tx); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.bm .seedn.blank { background: transparent; }
+.bm-status { font-size: 10px; color: var(--hint); margin-top: 4px; }
+
 .empty { text-align: center; color: var(--muted); padding: 36px 12px; border: 1px dashed var(--border); border-radius: 10px; }
 .hist { font-size: 11px; color: var(--muted); margin-top: 6px; display: grid; gap: 2px; }
 details summary { cursor: pointer; font-size: 12px; color: var(--navy); }
