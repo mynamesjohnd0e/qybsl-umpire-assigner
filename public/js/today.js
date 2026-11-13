@@ -92,7 +92,16 @@ async function todayAdmin(body) {
   soonNote(body, `Last schedule sync: ${d.lastRun ? fmtStamp(d.lastRun.at) : 'never'}. Snack Shack screens arrive in the next update.`);
 }
 async function todaySnack(body) {
-  body.innerHTML = `<div class="empty">Snack Shack shift tools arrive in a later update. You'll create shifts and see sign-ups here.</div>`;
+  let d;
+  try { d = await api('GET', '/api/admin/snack'); } catch (e) { body.innerHTML = `<div class="note bad">${esc(e.message)}</div>`; return; }
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const upcoming = (d.shifts || []).filter(s => !s.cancelled && s.date >= today);
+  const unfilled = upcoming.filter(s => (s.spotsLeft || 0) > 0).length;
+  body.innerHTML = tileGrid([
+    tile(unfilled, 'Shifts needing volunteers', 'snack', unfilled ? 'bad' : ''),
+    tile(upcoming.length, 'Upcoming shifts', 'snack')
+  ]);
+  bindGo(body);
 }
 
 export { viewToday };

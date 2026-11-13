@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1B3A6B">
+<title>Quarry Snack Shack Staffing</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+  .pub { max-width: 560px; margin: 0 auto; padding: 0 16px 48px; }
+  .pub-hdr { background: var(--navy); color: #fff; border-radius: 0 0 14px 14px; padding: 22px 18px; text-align: center; }
+  .pub-hdr b { display: block; font-size: 20px; letter-spacing: .2px; }
+  .pub-hdr span { color: rgba(255,255,255,.72); font-size: 13px; }
+  .pub-stripe { height: 4px; background: var(--red); border-radius: 2px; margin: 0 0 18px; }
+  .shift { border: 1px solid var(--border); border-radius: 10px; padding: 13px 14px; margin-bottom: 10px; }
+  .shift .when { font-weight: 700; color: var(--navy); }
+  .shift .meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .shift .spots { margin-top: 8px; }
+  .su-form { display: grid; gap: 8px; margin-top: 10px; }
+  .su-form[hidden] { display: none; }
+  .pub main { margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="pub">
+  <div class="pub-hdr"><b>Quarry Snack Shack Staffing</b><span>Quincy Youth Baseball &amp; Softball</span></div>
+  <div class="pub-stripe"></div>
+  <main id="pub-main"><p class="muted">Loading…</p></main>
+</div>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let toastTimer;
+function toast(msg, bad) {
+  document.querySelector('.toast')?.remove();
+  const t = document.createElement('div');
+  t.className = 'toast' + (bad ? ' bad' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), bad ? 5000 : 2800);
+}
+async function api(method, url, body) {
+  const opt = { method, headers: {} };
+  if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  const r = await fetch(url, opt);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Error ${r.status}`);
+  return data;
+}
+const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+function fmtTime(t) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '').trim());
+  if (!m) return String(t || '').trim();
+  let h = +m[1]; const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+  return `${h}:${m[2]} ${ap}`;
+}
+function timeRange(s) {
+  const a = fmtTime(s.start), b = fmtTime(s.end);
+  return a ? (b ? `${a}–${b}` : a) : '';
+}
+
+// ── Sign-up page ──────────────────────────────────────────────────────────────
+async function renderSignup() {
+  const main = $('#pub-main');
+  let shifts;
+  try { shifts = (await api('GET', '/api/public/snack/shifts')).shifts; }
+  catch (e) { main.innerHTML = `<div class="note bad">${esc(e.message)}</div>`; return; }
+  if (!shifts.length) { main.innerHTML = `<p class="sub">Thanks for helping out! There are no open Snack Shack shifts right now — please check back soon.</p>`; return; }
+  main.innerHTML = `<p class="sub">Pick a shift and sign up — no account needed. You'll get an email you can use to cancel if your plans change.</p>
+    <div id="shifts">${shifts.map(shiftCard).join('')}</div>`;
+  main.querySelectorAll('[data-open]').forEach(b => { b.onclick = () => openForm(b.dataset.open); });
+  main.querySelectorAll('form[data-signup]').forEach(f => { f.onsubmit = submitSignup; });
+}
+function shiftCard(s) {
+  const open = s.spotsLeft > 0;
+  return `<div class="shift" id="sh-${esc(s.id)}">
+    <div class="when">${esc(fmtDate(s.date))}</div>
+    <div class="meta">${esc(timeRange(s))}${s.title ? ` · ${esc(s.title)}` : ''}${s.location ? ` · ${esc(s.location)}` : ''}</div>
+    <div class="spots">${open
+      ? `<span class="badge b-green">${s.spotsLeft} spot${s.spotsLeft === 1 ? '' : 's'} open</span> <button class="btn sm" data-open="${esc(s.id)}">Sign up</button>`
+      : `<span class="badge b-gray">Full</span>`}</div>
+    <form data-signup="${esc(s.id)}" class="su-form" hidden>
+      <label>Your name<input name="name" required autocomplete="name"></label>
+      <label>Email<input name="email" type="email" required autocomplete="email"></label>
+      <label>Mobile<input name="mobile" type="tel" required autocomplete="tel"></label>
+      <div class="row"><button class="btn">Sign me up</button><button type="button" class="btn ghost" data-cancel-open="${esc(s.id)}">Never mind</button></div>
+    </form>
+  </div>`;
+}
+function openForm(id) {
+  const card = $(`#sh-${CSS.escape(id)}`);
+  const form = card.querySelector('form[data-signup]');
+  form.hidden = false;
+  card.querySelector('[data-open]').style.display = 'none';
+  form.querySelector('input').focus();
+  form.querySelector('[data-cancel-open]').onclick = () => { form.hidden = true; card.querySelector('[data-open]').style.display = ''; };
+}
+async function submitSignup(e) {
+  e.preventDefault();
+  const form = e.target;
+  const id = form.dataset.signup;
+  const btn = form.querySelector('.btn:not(.ghost)');
+  btn.disabled = true;
+  const body = Object.fromEntries(new FormData(form));
+  body.shiftId = id;
+  try {
+    await api('POST', '/api/public/snack/signup', body);
+    const card = $(`#sh-${CSS.escape(id)}`);
+    card.innerHTML = `<div class="note good" style="margin:0"><b>You're signed up — thank you!</b><br>We emailed ${esc(body.email)} a confirmation with a link to cancel if you can't make it.</div>`;
+  } catch (err) {
+    toast(err.message, true);
+    btn.disabled = false;
+    if (/full/i.test(err.message)) renderSignup(); // refresh counts if it just filled
+  }
+}
+
+// ── Cancel page (from the emailed link) ───────────────────────────────────────
+function renderCancel() {
+  const main = $('#pub-main');
+  const q = new URLSearchParams(location.search);
+  const s = q.get('s'), t = q.get('t');
+  if (!s || !t) { main.innerHTML = `<div class="note bad">This cancel link is missing some information. Please use the link from your confirmation email.</div>`; return; }
+  main.innerHTML = `<p class="sub">Cancel your Snack Shack sign-up? This reopens your spot for someone else.</p>
+    <div><button class="btn red" id="do-cancel">Yes, cancel my spot</button></div>`;
+  $('#do-cancel').onclick = async () => {
+    $('#do-cancel').disabled = true;
+    try {
+      const r = await api('POST', '/api/public/snack/cancel', { s, t });
+      main.innerHTML = `<div class="note good"><b>${r.alreadyCancelled ? 'Already cancelled.' : 'Your spot has been cancelled.'}</b><br>Thanks for letting us know.</div>`;
+    } catch (err) { main.innerHTML = `<div class="note bad">${esc(err.message)}</div>`; }
+  };
+}
+
+if (location.pathname.indexOf('/snack/cancel') === 0) renderCancel();
+else renderSignup();
+</script>
+</body>
+</html>
