@@ -352,8 +352,9 @@ async function viewSync(main) {
       <div class="row"><input type="file" name="file" accept=".csv,.ics,text/csv,text/calendar" style="flex:2;min-width:220px"><input name="season" value="${esc(up.season || st.seasonLabel)}" placeholder="Season" style="flex:1;min-width:120px"></div>
       ${test ? `<label>Move dates forward by this many days (test copy only)<input name="shiftDays" type="number" value="${esc(up.shiftDays || 0)}" style="max-width:160px"><span class="small muted" style="font-weight:400">Use a multiple of 7 to keep games on the same weekday. 217 turns April 11, 2026 into Saturday, November 14.</span></label>` : ''}
       <textarea name="text" placeholder="…or paste the file's contents here" style="min-height:70px"></textarea>
-      <div><button class="btn sm">Upload and sync</button></div>
+      <div class="row"><button type="button" class="btn ghost sm" id="upload-preview-btn">Preview changes</button><button class="btn sm">Upload and sync</button></div>
     </form>
+    <div id="upload-preview"></div>
     ${test ? `<div class="note warn mt"><b>Test copy.</b> Start over with a clean slate: <button class="link" id="t-reset">clear all practice games, people and messages</button> (admins and settings stay).</div>` : ''}
     <h3>Calendar feed links (optional)</h3>
     <p class="small muted">If a team or league calendar in SportsEngine offers Subscribe, paste its iCal link here.</p>
@@ -382,6 +383,25 @@ async function viewSync(main) {
       toast(syncMsg(r));
     } catch (err) { toast(err.message, true); }
     viewSync(main);
+  };
+  $('#upload-preview-btn').onclick = async () => {
+    const f = $('#upload');
+    const file = f.querySelector('[name=file]').files[0];
+    const text = file ? await file.text() : f.querySelector('[name=text]').value;
+    if (!text.trim()) return toast('Choose the exported file first.', true);
+    const out = $('#upload-preview');
+    out.innerHTML = '<p class="muted small mt">Checking…</p>';
+    try {
+      const r = await api('POST', '/api/admin/schedule-upload/preview', { text, season: f.season.value, shiftDays: f.shiftDays ? Number(f.shiftDays.value) : 0 });
+      const cx = Object.entries(r.counts || {}).filter(([, v]) => v);
+      out.innerHTML = `<div class="note info mt"><b>Preview — nothing saved yet.</b> ${r.firstImport ? 'This would be the first import. ' : ''}Review below, then <b>Upload and sync</b> to apply it.</div>
+        <div class="row">${cx.length ? cx.map(([k, v]) => `<span class="badge ${changeBadge[k] || 'b-gray'}">${v} ${k}</span>`).join('') : '<span class="badge b-gray">no changes</span>'}</div>
+        ${(r.errors || []).map(e => `<div class="note bad mt">${esc(e)}</div>`).join('')}
+        ${(r.warnings || []).map(e => `<div class="note warn mt">${esc(e)}</div>`).join('')}
+        ${r.counts && r.counts.unsorted ? `<div class="note warn mt"><b>${r.counts.unsorted} event${r.counts.unsorted > 1 ? 's' : ''} didn't match a division</b> and would be skipped. Examples: ${(r.unsortedSamples || []).map(s => `"${esc(s)}"`).join(', ')}.</div>` : ''}
+        ${(r.unmatchedTeams && r.unmatchedTeams.length) ? `<div class="note warn mt"><b>Teams not on the coach list:</b> ${r.unmatchedTeams.map(esc).join(', ')}.</div>` : ''}
+        ${(r.changes && r.changes.length) ? `<div class="tbl-wrap mt"><table><tr><th>Change</th><th>Game</th></tr>${r.changes.slice(0, 200).map(c => `<tr><td><span class="badge ${changeBadge[c.change] || 'b-gray'}">${esc(c.change)}</span></td><td class="small">${esc(c.summary || '')}<div class="muted">${c.start ? fmtWhen(c.start) : ''}</div></td></tr>`).join('')}</table></div>` : ''}`;
+    } catch (err) { out.innerHTML = `<div class="note bad mt">${esc(err.message)}</div>`; }
   };
   const reset = $('#t-reset');
   if (reset) reset.onclick = async () => {

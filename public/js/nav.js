@@ -11,6 +11,7 @@ import { viewAccount } from './account.js';
 import { viewViolations } from './pitching.js';
 import { viewClosures } from './closures.js';
 import { viewSnack } from './snack.js';
+import { viewTeams, viewBackup } from './data.js';
 
 async function act(fn, okMsg) {
   try { const r = await fn(); if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg); await loadTab(); return r; }
@@ -52,7 +53,7 @@ const ROLE_NAV = {
   umpire:   { bar: ['today', 'open', 'mine', 'pay'], more: ['standings'] },
   coach:    { bar: ['today', 'coach', 'scores', 'standings'] },
   director: { bar: ['today', 'cov', 'scores', 'standings'], more: ['brackets', 'violations', 'entersse'] },
-  admin:    { bar: ['today', 'cov', 'scores', 'standings'], more: ['brackets', 'violations', 'closures', 'snack', 'people', 'entersse', 'ratings', 'payouts', 'sync', 'msgs', 'settings'] },
+  admin:    { bar: ['today', 'cov', 'scores', 'standings'], more: ['brackets', 'violations', 'closures', 'snack', 'people', 'teams', 'entersse', 'ratings', 'payouts', 'sync', 'msgs', 'settings', 'backup'] },
   snack:    { bar: ['today', 'snack'] },
   account:  { bar: ['today'] }
 };
@@ -86,6 +87,8 @@ const DEST = {
   violations:{ label: 'Pitch alerts', icon: 'warn', view: viewViolations },
   closures: { label: 'Closures', icon: 'cloud',     view: viewClosures },
   snack:    { label: 'Snack Shack', icon: 'cup',    view: viewSnack },
+  teams:    { label: 'Teams',    icon: 'roster',    view: viewTeams },
+  backup:   { label: 'Backup',   icon: 'save',      view: viewBackup },
   game:     { label: 'Game',     icon: 'calendar',  view: viewGame }
 };
 
@@ -108,6 +111,8 @@ const ICONS = {
   warn: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17.5v.5"/>',
   cloud: '<path d="M6.5 18a4.5 4.5 0 0 1-.5-9 5.5 5.5 0 0 1 10.6-1.1A3.75 3.75 0 0 1 17.5 18z"/><path d="M8 20l-1 2M12 20l-1 2M16 20l-1 2"/>',
   cup: '<path d="M4 8h13v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17M5 21h11"/>',
+  roster: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/>',
+  save: '<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7M8 13h8v8H8z"/>',
   more: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>'
 };
 function icon(name) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ICONS.home}</svg>`; }

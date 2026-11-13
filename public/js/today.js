@@ -72,7 +72,7 @@ async function todayDirector(body) {
     tile(c.unconfirmed || 0, 'Past games, umpires unconfirmed', 'cov')
   ]);
   bindGo(body);
-  soonNote(body, 'Snack Shack sign-ups arrive in the next update.');
+  soonNote(body, 'Settle score disputes and record coin tosses from Scores and Standings.');
 }
 async function todayAdmin(body) {
   const [d, sd, vd] = await Promise.all([api('GET', '/api/admin/overview'), api('GET', '/api/standings'), api('GET', '/api/admin/pitching/violations')]);
@@ -89,7 +89,7 @@ async function todayAdmin(body) {
     tile(pending, 'People awaiting approval', 'people', pending ? 'bad' : '')
   ]);
   bindGo(body);
-  soonNote(body, `Last schedule sync: ${d.lastRun ? fmtStamp(d.lastRun.at) : 'never'}. Snack Shack screens arrive in the next update.`);
+  soonNote(body, `Last schedule sync: ${d.lastRun ? fmtStamp(d.lastRun.at) : 'never'}.`);
 }
 async function todaySnack(body) {
   let d;
